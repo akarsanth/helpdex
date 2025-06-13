@@ -14,8 +14,6 @@ export const defaultErrorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  console.log("In default error handler");
-
   // If everything is working correctly, the error handler should never be reached when a 200 response is expected.
   // sometimes 500 error is shown as 200
   const statusCode = res.statusCode === 200 ? 500 : res.statusCode;

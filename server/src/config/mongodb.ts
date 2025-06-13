@@ -3,7 +3,9 @@ import chalk from "chalk";
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI as string);
+    const conn = await mongoose.connect(process.env.MONGO_URI as string, {
+      dbName: "helpdex", // explicitly sets the DB name
+    });
 
     console.log(
       chalk.cyan.underline(`MongoDB Connected: ${conn.connection.host}`)

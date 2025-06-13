@@ -27,6 +27,10 @@ app.get("/", (req, res) => {
   res.send("Hello, Welcome to helpdex server!");
 });
 
+// Setting up api/routes
+import api from "./routes";
+app.use("/api/v1", api);
+
 // to handle invalid page
 // incase user goes to invalid url
 app.use(notFound);
