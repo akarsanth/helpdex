@@ -67,6 +67,90 @@ const register = asyncHandler(
   }
 );
 
+// @desc    Verify user's email using activation token
+// @route   POST /api/v1/users/verify-email
+// @access  Public
+const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
+  try {
+    const { activationToken } = req.body;
+
+    // validating activation token
+    if (!activationToken || typeof activationToken !== "string") {
+      res.status(400);
+      throw new Error("Activation token is missing or invali!");
+    }
+
+    // verifying the token with activation token key
+    const decoded = jwt.verify(
+      activationToken,
+      process.env.ACTIVATION_TOKEN_SECRET as string
+    ) as { _id: string; email: string };
+
+    const user = await User.findOne({ email: decoded.email });
+
+    if (!user) {
+      // Bad request
+      res.status(400);
+      throw new Error("User not found!");
+    }
+
+    if (user.isEmailVerified) {
+      res.status(400).json({ message: "Email already verified!" });
+    }
+
+    user.isEmailVerified = true;
+    user.emailVerifiedAt = new Date();
+
+    await user.save();
+
+    res.json({ message: "Email verified successfully" });
+  } catch (error: any) {
+    res.status(400);
+    throw new Error(error.message || "Invalid or expired activation token~");
+  }
+});
+
+// @desc    Approve a user manually by admin
+// @route   PUT /api/v1/users/:id/approve
+// @access  Private (Admin only)
+export const approveUser = asyncHandler(async (req: Request, res: Response) => {
+  const user = await User.findById(req.params.id);
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found");
+  }
+
+  user.isApprovedByAdmin = true;
+  user.adminApprovedAt = new Date();
+  await user.save();
+
+  res.status(200).json({ message: "User approved successfully" });
+});
+
+// @desc    Resend email verification link to unverified user
+// @route   POST /api/v1/users/resend-verification
+// @access  Public
+const resendVerification = asyncHandler(async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found");
+  }
+
+  if (user.isEmailVerified) {
+    res.status(400);
+    throw new Error("Email already verified");
+  }
+
+  const token = createActivationToken({ _id: user._id.toString(), email });
+  const activationUrl = `${config.domain}/activate/${token}`;
+  await sendEmail(email, activationUrl, "Verify your account");
+
+  res.status(200).json({ message: "Activation email resent." });
+});
+
 // Helper to create activation token
 const createActivationToken = (user: { _id: string; email: string }) => {
   return jwt.sign(user, process.env.ACTIVATION_TOKEN_SECRET as string, {
@@ -74,4 +158,4 @@ const createActivationToken = (user: { _id: string; email: string }) => {
   });
 };
 
-export { register };
+export { register, verifyEmail, resendVerification };
