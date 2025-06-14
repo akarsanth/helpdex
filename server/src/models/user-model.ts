@@ -1,10 +1,10 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
 import bcrypt from "bcryptjs";
 
-// Define roles
+// Define allowed roles for the user
 export type UserRole = "client" | "qa" | "admin" | "developer";
 
-// Interface for User document
+// Interface describing the User document structure
 export interface IUser extends Document {
   _id: Types.ObjectId;
   name: string;
@@ -19,10 +19,14 @@ export interface IUser extends Document {
   resetOtp?: string;
   resetOtpExpiresAt?: Date;
 
+  // Method to compare passwords
   matchPassword(enteredPassword: string): Promise<boolean>;
-  toJSON(): Record<string, any>; // to exclude password in responses
+
+  // Method to remove sensitive fields from the response
+  toJSON(): Record<string, any>;
 }
 
+// Define schema for the User collection
 const userSchema = new Schema<IUser>(
   {
     name: { type: String, required: true, trim: true },
@@ -34,7 +38,7 @@ const userSchema = new Schema<IUser>(
       lowercase: true,
       trim: true,
     },
-    password: { type: String }, // No validation
+    password: { type: String }, // Password is stored hashed, validation handled elsewhere
 
     role: {
       type: String,
@@ -51,24 +55,17 @@ const userSchema = new Schema<IUser>(
     resetOtp: String,
     resetOtpExpiresAt: Date,
   },
-  { timestamps: true }
+  { timestamps: true } // Adds createdAt and updatedAt automatically
 );
 
-// Hash password if modified
-// userSchema.pre<IUser>("save", async function (next) {
-//   if (!this.isModified("password") || !this.password) return next();
-//   this.password = await bcrypt.hash(this.password, 10);
-//   next();
-// });
-
-// Compare passwords
+// Method to compare hashed password with entered password
 userSchema.methods.matchPassword = async function (
   enteredPassword: string
 ): Promise<boolean> {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// Hide password and __v in JSON response
+// Override toJSON to hide sensitive fields like password and __v
 userSchema.methods.toJSON = function () {
   const userObject = this.toObject();
   delete userObject.password;
@@ -76,5 +73,6 @@ userSchema.methods.toJSON = function () {
   return userObject;
 };
 
+// Create and export the User model
 const User = mongoose.model<IUser>("User", userSchema);
 export default User;
