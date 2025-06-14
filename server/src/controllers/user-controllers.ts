@@ -246,6 +246,12 @@ export const approveUser = asyncHandler(async (req: Request, res: Response) => {
     throw new Error("User not found");
   }
 
+  // Unverfied email user cannot be verfied by admin
+  if (!user.isEmailVerified) {
+    res.status(400);
+    throw new Error("Cannot approve user. Email is not verified.");
+  }
+
   // Mark user as approved
   user.isApprovedByAdmin = true;
   user.adminApprovedAt = new Date();
