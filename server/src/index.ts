@@ -20,7 +20,12 @@ app.use(express.json());
 
 // morgan, helmet, cors, and cookie parser
 app.use(helmet());
-app.use(cors({ credentials: true }));
+app.use(
+  cors({
+    origin: true, // allows all origins (Postman too)
+    credentials: true, // must be true for cookies to work
+  })
+);
 app.use(cookieParser());
 
 app.get("/", (req, res) => {

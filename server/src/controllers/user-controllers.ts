@@ -5,6 +5,11 @@ import bcrypt from "bcryptjs";
 import { Request, Response } from "express";
 import sendEmail from "../utils/sendEmail";
 import config from "../config";
+import {
+  createAccessToken,
+  createActivationToken,
+  createRefreshToken,
+} from "../utils/token";
 
 // Define expected request body for user registration
 interface RegisterRequestBody {
@@ -17,7 +22,7 @@ interface RegisterRequestBody {
 // @desc    Register a new user
 // @route   POST /api/v1/users
 // @access  Public
-const register = asyncHandler(
+export const register = asyncHandler(
   async (req: Request<{}, {}, RegisterRequestBody>, res: Response) => {
     const { name, companyName, email, password } = req.body;
 
@@ -56,7 +61,15 @@ const register = asyncHandler(
       const activationUrl = `${config.domain}/activate/${activationToken}`;
 
       // Send email verification link
-      await sendEmail(email, activationUrl, "Verify your account");
+      await sendEmail({
+        to: email,
+        subject: "Verify your HelpDex account",
+        heading: "Welcome to HelpDex",
+        message:
+          "Thanks for registering! Please click the button below to verify your email and activate your account.",
+        buttonText: "Verify Account",
+        buttonUrl: activationUrl,
+      });
 
       // Respond with success message
       res.status(201).json({
@@ -72,7 +85,7 @@ const register = asyncHandler(
 // @desc    Verify user's email using activation token
 // @route   POST /api/v1/users/verify-email
 // @access  Public
-const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
+export const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
   try {
     const { activationToken } = req.body;
 
@@ -113,6 +126,115 @@ const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
   }
 });
 
+// @desc    Login User
+// @route   POST /api/v1/users/login
+// @access  Public
+export const login = asyncHandler(async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+
+  // Check for email and password
+  if (!email || !password) {
+    res.status(400);
+    throw new Error("Email and password are required.");
+  }
+
+  const user = await User.findOne({ email });
+
+  if (!user || !(await user.matchPassword(password))) {
+    res.status(401);
+    throw new Error("Invalid email or password.");
+  }
+
+  // Check if email is verified
+  if (!user.isEmailVerified) {
+    const activationToken = createActivationToken({
+      _id: user._id.toString(),
+      email: user.email,
+    });
+
+    const activationUrl = `${config.domain}/activate/${activationToken}`;
+
+    await sendEmail({
+      to: email,
+      subject: "Verify your HelpDex account",
+      heading: "Email Verification Needed",
+      message: "You must verify your email to log in. Click below to verify.",
+      buttonText: "Verify Now",
+      buttonUrl: activationUrl,
+    });
+
+    res.status(403).json({
+      message: "Email not verified. A verification email has been resent.",
+    });
+    return;
+  }
+
+  // Optional: Check if admin has approved
+  if (!user.isApprovedByAdmin) {
+    res.status(403);
+    throw new Error("Your account is pending admin approval.");
+  }
+
+  // Creating refresh token
+  const refreshToken = createRefreshToken({ _id: user._id });
+
+  console.log("Setting refresh token cookie");
+
+  // Setting refresh token in the cookie
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: false, // false for Postman/local testing
+    sameSite: "lax", // important for cookies to show up
+    path: "/api/v1/users/refresh-token",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+
+  // Respond only with success
+  res.status(200).json({ message: "Login successful." });
+});
+
+export const getAccessToken = asyncHandler(
+  async (req: Request, res: Response) => {
+    const token = req.cookies?.refreshToken;
+
+    if (!token) {
+      res.status(401);
+      throw new Error("Please login first!");
+    }
+
+    try {
+      const decoded = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET!) as {
+        _id: string;
+      };
+
+      // Get user from DB
+      const user = await User.findById(decoded._id).select("-password");
+
+      if (!user) {
+        res.status(401);
+        throw new Error("User not found.");
+      }
+
+      if (!user.isEmailVerified || !user.isApprovedByAdmin) {
+        res.status(403);
+        throw new Error("Account not verified or approved.");
+      }
+
+      // Create access token
+      const accessToken = createAccessToken({ _id: user._id });
+
+      // Send access token and user info
+      res.status(200).json({
+        accessToken,
+        user: user.toJSON(),
+      });
+    } catch (error) {
+      res.status(401);
+      throw new Error("Invalid or expired refresh token.");
+    }
+  }
+);
+
 // @desc    Approve a user manually by admin
 // @route   PUT /api/v1/users/:id/approve
 // @access  Private (Admin only)
@@ -135,36 +257,39 @@ export const approveUser = asyncHandler(async (req: Request, res: Response) => {
 // @desc    Resend email verification link to unverified user
 // @route   POST /api/v1/users/resend-verification
 // @access  Public
-const resendVerification = asyncHandler(async (req: Request, res: Response) => {
-  const { email } = req.body;
+export const resendVerification = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { email } = req.body;
 
-  // Find user by email
-  const user = await User.findOne({ email });
-  if (!user) {
-    res.status(404);
-    throw new Error("User not found");
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      res.status(404);
+      throw new Error("User not found.");
+    }
+
+    if (user.isEmailVerified) {
+      res.status(400);
+      throw new Error("Email is already verified.");
+    }
+
+    const token = createActivationToken({
+      _id: user._id.toString(),
+      email: user.email,
+    });
+
+    const activationUrl = `${config.domain}/activate/${token}`;
+
+    await sendEmail({
+      to: email,
+      subject: "Resend: Verify your HelpDex account",
+      heading: "Email Verification Needed",
+      message:
+        "Click the button below to verify your account and start using HelpDex.",
+      buttonText: "Verify Account",
+      buttonUrl: activationUrl,
+    });
+
+    res.status(200).json({ message: "Verification email has been resent." });
   }
-
-  // Check if already verified
-  if (user.isEmailVerified) {
-    res.status(400);
-    throw new Error("Email already verified");
-  }
-
-  // Generate and send activation token again
-  const token = createActivationToken({ _id: user._id.toString(), email });
-  const activationUrl = `${config.domain}/activate/${token}`;
-  await sendEmail(email, activationUrl, "Verify your account");
-
-  res.status(200).json({ message: "Activation email resent." });
-});
-
-// Helper function to generate activation token (valid for 30 minutes)
-const createActivationToken = (user: { _id: string; email: string }) => {
-  return jwt.sign(user, process.env.ACTIVATION_TOKEN_SECRET as string, {
-    expiresIn: "30m",
-  });
-};
-
-// Export controllers
-export { register, verifyEmail, resendVerification };
+);
