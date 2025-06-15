@@ -3,13 +3,14 @@ import User from "../models/user-model";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { Request, Response } from "express";
-import sendEmail from "../utils/sendEmail";
+import sendEmail from "../utils/send-email";
 import config from "../config";
 import {
   createAccessToken,
   createActivationToken,
   createRefreshToken,
 } from "../utils/token";
+import { generateOtp } from "../utils/generate-otp";
 
 // Define expected request body for user registration
 interface RegisterRequestBody {
@@ -297,5 +298,68 @@ export const resendVerification = asyncHandler(
     });
 
     res.status(200).json({ message: "Verification email has been resent." });
+  }
+);
+
+// @desc    Send OTP to user email for password reset
+// @route   POST /api/v1/users/forgot-password
+// @access  Public
+export const forgotPassword = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      res.status(404);
+      throw new Error("No user found with that email.");
+    }
+
+    const otp = generateOtp();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    user.resetOtp = otp;
+    user.resetOtpExpiresAt = expiresAt;
+    await user.save();
+
+    await sendEmail({
+      to: email,
+      subject: "HelpDex Password Reset OTP",
+      heading: "Reset Your Password",
+      message:
+        "Use the OTP below to reset your password. It's valid for 10 minutes.",
+      otp: otp,
+    });
+
+    res.status(200).json({ message: "OTP sent to your email." });
+  }
+);
+
+// @desc    Reset user password using OTP
+// @route   POST /api/v1/users/reset-password
+// @access  Public
+export const resetPassword = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { email, otp, newPassword } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (
+      !user ||
+      user.resetOtp !== otp ||
+      !user.resetOtpExpiresAt ||
+      user.resetOtpExpiresAt < new Date()
+    ) {
+      res.status(400);
+      throw new Error("Invalid or expired OTP.");
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.resetOtp = undefined;
+    user.resetOtpExpiresAt = undefined;
+
+    await user.save();
+
+    res.status(200).json({ message: "Password has been reset successfully." });
   }
 );
