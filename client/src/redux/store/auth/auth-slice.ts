@@ -1,0 +1,95 @@
+import { createSlice } from "@reduxjs/toolkit";
+import { loginUser, fetchCurrentUser, logoutUser } from "./auth-actions";
+
+export type UserRole = "client" | "qa" | "admin" | "developer";
+
+interface User {
+  id: string;
+  name: string;
+  companyName: string;
+  email: string;
+  role: UserRole;
+  isEmailVerified: boolean;
+  emailVerifiedAt?: string;
+  isApprovedByAdmin: boolean;
+  adminApprovedAt?: string;
+}
+
+interface AuthState {
+  isLoading: boolean;
+  isLoggedIn: boolean;
+  user: User | null;
+  accessToken: string | null;
+  error: string | null;
+  message: string | null;
+}
+
+const initialState: AuthState = {
+  isLoading: false,
+  isLoggedIn: false,
+  user: null,
+  accessToken: null,
+  error: null,
+  message: null,
+};
+
+const authSlice = createSlice({
+  name: "auth",
+  initialState,
+  reducers: {
+    resetAuthState: () => initialState,
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(loginUser.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+        state.message = null;
+      })
+      .addCase(loginUser.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.accessToken = action.payload.token;
+        state.user = action.payload.user;
+        state.isLoggedIn = true;
+        state.message = "Login successful";
+      })
+      .addCase(loginUser.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+        state.message = null;
+      })
+
+      .addCase(fetchCurrentUser.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+        state.message = null;
+      })
+      .addCase(fetchCurrentUser.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.accessToken = action.payload.token;
+        state.user = action.payload.user;
+        state.isLoggedIn = true;
+        state.message = "Session restored";
+      })
+      .addCase(fetchCurrentUser.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+        state.isLoggedIn = false;
+        state.user = null;
+        state.accessToken = null;
+        state.message = null;
+      })
+
+      .addCase(logoutUser.fulfilled, () => {
+        return initialState;
+      })
+
+      .addCase(logoutUser.rejected, (state, action) => {
+        state.error = action.payload as string;
+        state.message = null;
+      });
+  },
+});
+
+export const { resetAuthState } = authSlice.actions;
+export default authSlice.reducer;
