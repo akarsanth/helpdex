@@ -16,8 +16,8 @@ interface FormWrapperProps {
   children: ReactNode;
 }
 
-const FormWrapper = ({ children }: FormWrapperProps) => {
+const FormFieldsWrapper = ({ children }: FormWrapperProps) => {
   return <Form>{children}</Form>;
 };
 
-export default FormWrapper;
+export default FormFieldsWrapper;

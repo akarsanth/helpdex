@@ -132,6 +132,7 @@ export const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
 // @access  Public
 export const login = asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = req.body;
+  console.log(email, password);
 
   // Check for email and password
   if (!email || !password) {
@@ -142,7 +143,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   const user = await User.findOne({ email });
 
   if (!user || !(await user.matchPassword(password))) {
-    res.status(401);
+    res.status(400);
     throw new Error("Invalid email or password.");
   }
 

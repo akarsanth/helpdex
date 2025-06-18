@@ -1,10 +1,19 @@
 // MUI import
-import { Link, Container, Box, Grid } from "@mui/material";
+import { Link, Container, Box, Grid, type LinkProps } from "@mui/material";
 import { styled } from "@mui/material/styles";
+import {
+  Link as RouterLink,
+  type LinkProps as RouterLinkProps,
+} from "react-router-dom";
+
+// Merge the props from MUI Link and React Router Link
+type FormLinkProps = LinkProps & RouterLinkProps;
 
 // Styled Components
 // For links in the forms
-export const FormLink = styled(Link)(({ theme }) => ({
+export const FormLink = styled((props: FormLinkProps) => (
+  <Link component={RouterLink} {...props} />
+))(({ theme }) => ({
   "&:hover": {
     color: theme.palette.text.primary,
   },
