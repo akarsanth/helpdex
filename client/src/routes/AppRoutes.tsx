@@ -5,6 +5,7 @@ import ProtectedRoutes from "./ProtectedRoutes";
 import Dashboard from "../pages/Dashboard";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
+import ActivateAccount from "../pages/ActivateAccount";
 
 const AppRoutes = () => {
   return (
@@ -15,6 +16,7 @@ const AppRoutes = () => {
       {/* Public routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/activate" element={<ActivateAccount />} />
 
       {/* Protected routes */}
       <Route element={<ProtectedRoutes />}>

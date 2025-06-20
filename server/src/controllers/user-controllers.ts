@@ -36,6 +36,16 @@ export const register = asyncHandler(
     // Check if user already exists
     const userExists = await User.findOne({ email });
     if (userExists) {
+      if (!userExists.isEmailVerified) {
+        res.status(409).json({
+          message: `User with email '${userExists.email}' already registered but email not verified.`,
+          isEmailVerified: false,
+          email: userExists.email,
+        });
+
+        return;
+      }
+
       res.status(400);
       throw new Error("User already exists.");
     }
@@ -59,7 +69,7 @@ export const register = asyncHandler(
       });
 
       // Construct email verification URL
-      const activationUrl = `${config.domain}/activate/${activationToken}`;
+      const activationUrl = `${config.domain}/activate?token=${activationToken}`;
 
       // Send email verification link
       await sendEmail({
@@ -154,7 +164,8 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
       email: user.email,
     });
 
-    const activationUrl = `${config.domain}/activate/${activationToken}`;
+    // Construct email verification URL
+    const activationUrl = `${config.domain}/activate?token=${activationToken}`;
 
     await sendEmail({
       to: email,
@@ -179,8 +190,6 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 
   // Creating refresh token
   const refreshToken = createRefreshToken({ _id: user._id });
-
-  console.log("Setting refresh token cookie");
 
   // Setting refresh token in the cookie
   res.cookie("refreshToken", refreshToken, {
@@ -281,12 +290,12 @@ export const resendVerification = asyncHandler(
       throw new Error("Email is already verified.");
     }
 
-    const token = createActivationToken({
+    const activationToken = createActivationToken({
       _id: user._id.toString(),
       email: user.email,
     });
 
-    const activationUrl = `${config.domain}/activate/${token}`;
+    const activationUrl = `${config.domain}/activate?token=${activationToken}`;
 
     await sendEmail({
       to: email,
@@ -312,8 +321,8 @@ export const forgotPassword = asyncHandler(
     const user = await User.findOne({ email });
 
     if (!user) {
-      res.status(404);
-      throw new Error("No user found with that email.");
+      res.status(200).json({ message: "OTP sent to your email." });
+      return;
     }
 
     const otp = generateOtp();
@@ -343,6 +352,8 @@ export const resetPassword = asyncHandler(
   async (req: Request, res: Response) => {
     const { email, otp, newPassword } = req.body;
 
+    console.log(email, otp, newPassword);
+
     const user = await User.findOne({ email });
 
     if (
@@ -362,5 +373,50 @@ export const resetPassword = asyncHandler(
     await user.save();
 
     res.status(200).json({ message: "Password has been reset successfully." });
+  }
+);
+
+// @desc    Resend OTP for password reset
+// @route   POST /api/v1/users/resend-reset-otp
+// @access  Public
+export const resendResetOtp = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { email } = req.body;
+
+    // Check if email is provided
+    if (!email) {
+      res.status(400);
+      throw new Error("Email is required.");
+    }
+
+    // Find the user
+    const user = await User.findOne({ email });
+
+    // Respond with generic message even if user doesn't exist
+    if (!user) {
+      res.status(200).json({ message: "OTP sent to your email." });
+      return;
+    }
+
+    // Generate new OTP and expiry
+    const otp = generateOtp();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Save OTP to user record
+    user.resetOtp = otp;
+    user.resetOtpExpiresAt = expiresAt;
+    await user.save();
+
+    // Send email
+    await sendEmail({
+      to: email,
+      subject: "HelpDex Password Reset OTP",
+      heading: "Reset Your Password",
+      message:
+        "Use the OTP below to reset your password. It's valid for 10 minutes.",
+      otp,
+    });
+
+    res.status(200).json({ message: "OTP has been resent to your email." });
   }
 );

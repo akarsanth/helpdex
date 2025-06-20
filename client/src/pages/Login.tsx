@@ -6,6 +6,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 // Redux
 import { useDispatch, useSelector } from "react-redux";
 import { loginUser } from "../redux/store/auth/auth-actions";
+import { clearStatus } from "../redux/store/auth/auth-slice";
 import type { RootState, AppDispatch } from "../redux/store";
 
 // Formik and yup
@@ -20,7 +21,6 @@ import FormContainer, { FormLink } from "../components/FormsUI/FormContainer";
 import Textfield from "../components/FormsUI/Textfield";
 import TextfieldPw from "../components/FormsUI/Textfield/TextFieldPassword";
 import Button from "../components/FormsUI/Button";
-import Message from "../components/Message";
 
 // MUI imports
 import Typography from "@mui/material/Typography";
@@ -37,9 +37,13 @@ const Login = () => {
   const location = useLocation();
   const dispatch = useDispatch<AppDispatch>();
 
-  const { error, message, isLoggedIn, user } = useSelector(
+  const { error, message, isLoggedIn, user, isLoading } = useSelector(
     (state: RootState) => state.auth
   );
+
+  useEffect(() => {
+    dispatch(clearStatus());
+  }, [dispatch]);
 
   // After successful authentication and fetching of user info
   useEffect(() => {
@@ -59,7 +63,8 @@ const Login = () => {
     { setSubmitting, setStatus }: FormikHelpers<LoginFormValues>
   ) => {
     try {
-      dispatch(loginUser(values));
+      // awaiting dispatch
+      await dispatch(loginUser(values));
     } catch (error: unknown) {
       if (error instanceof Error) {
         setStatus(error.message);
@@ -75,11 +80,7 @@ const Login = () => {
     <>
       {!isLoggedIn && (
         <FormContainer>
-          <Typography
-            variant="body1"
-            component="h2"
-            sx={{ mb: 4, fontWeight: 700 }}
-          >
+          <Typography sx={{ mb: 4 }} variant="h6">
             Log In to Your Account!
           </Typography>
 
@@ -102,6 +103,8 @@ const Login = () => {
                     color="secondary"
                     endIcon={<KeyboardArrowRightIcon />}
                     disableElevation
+                    loading={isLoading}
+                    // we can use isSubmitting prop from formik as well
                   >
                     Login
                   </Button>
@@ -114,8 +117,8 @@ const Login = () => {
                   </Box>
 
                   {status && <Alert severity="error">{status}</Alert>}
-                  {message && <Message message={message} type="success" />}
                   {error && <Alert severity="error">{error}</Alert>}
+                  {message && <Alert severity="info">{message}</Alert>}
                 </FormFieldsWrapper>
               </FormikForm>
             )}

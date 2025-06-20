@@ -19,12 +19,6 @@ export const FormLink = styled((props: FormLinkProps) => (
   },
 }));
 
-// For Name fields (First name and last name)
-export const NameFields = styled(Box)(({ theme }) => ({
-  display: "flex",
-  gap: theme.spacing(3),
-}));
-
 // Props type
 interface FormContainerProps {
   children: React.ReactNode;

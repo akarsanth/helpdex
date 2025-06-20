@@ -16,7 +16,7 @@ const ButtonWrapper = ({ children, ...otherProps }: ButtonProps) => {
     onClick: submitHandler,
     ...otherProps,
     variant: "contained",
-
+    type: "submit",
     loading: isSubmitting,
   };
 

@@ -59,6 +59,7 @@ function App() {
   const dispatch = useDispatch<AppDispatch>();
   const { user } = useSelector((state: RootState) => state.auth);
   const { type, message } = useSelector((state: RootState) => state.message);
+  console.log("message");
 
   const [isDarkMode, setIsDarkMode] = useState(false);
   // const handleThemeToggle = () => setIsDarkMode((prev) => !prev);
