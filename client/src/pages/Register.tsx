@@ -1,12 +1,12 @@
-import React, { useReducer, useRef } from "react";
+import { useReducer, useRef, useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 
 // Service
 import { registerUser } from "../services/register-service";
 
 // Formik and Yup
-import { Formik, Form as FormikForm } from "formik";
 import type { FormikHelpers } from "formik";
+import { Formik, Form as FormikForm } from "formik";
 import {
   INITIAL_REGISTER_FORM_STATE,
   REGISTER_FORM_VALIDATION,
@@ -18,6 +18,7 @@ import FormContainer, { FormLink } from "../components/FormsUI/FormContainer";
 import FormFields from "../components/FormsUI/FormFieldsWrapper";
 import Textfield from "../components/FormsUI/Textfield";
 import TextfieldPw from "../components/FormsUI/Textfield/TextFieldPassword";
+import ResendVerificationButton from "../components/ResendVerficationButton";
 
 // MUI
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
@@ -64,14 +65,25 @@ const Register = () => {
   const { isLoading, error, success } = state;
   const formikRef = useRef(null);
 
+  // For resend process
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
+  const [isEmailVerified, setIsEmailVerified] = useState(true);
+
   const submitHandler = async (
     values: typeof INITIAL_REGISTER_FORM_STATE,
     { resetForm }: FormikHelpers<typeof INITIAL_REGISTER_FORM_STATE>
   ) => {
     dispatch({ type: "REQUEST" });
 
-    const { data, error } = await registerUser(values);
+    const {
+      data,
+      error,
+      isEmailVerified: emailVerifiedFlag,
+      unverifiedEmail,
+    } = await registerUser(values);
 
+    setIsEmailVerified(emailVerifiedFlag);
+    setUnverifiedEmail(unverifiedEmail || null);
     if (error) {
       dispatch({ type: "FAIL", payload: error });
     } else {
@@ -82,7 +94,7 @@ const Register = () => {
 
   return (
     <FormContainer>
-      <Typography sx={{ mb: 4 }} variant="h6">
+      <Typography sx={{ mb: 4, textAlign: "center" }} variant="h6">
         Register a account!
       </Typography>
 
@@ -122,6 +134,10 @@ const Register = () => {
 
             {success && <Alert severity="success">{success}</Alert>}
             {error && <Alert severity="error">{error}</Alert>}
+
+            {!isEmailVerified && unverifiedEmail && (
+              <ResendVerificationButton email={unverifiedEmail} />
+            )}
           </FormFields>
         </FormikForm>
       </Formik>

@@ -80,7 +80,7 @@ const Login = () => {
     <>
       {!isLoggedIn && (
         <FormContainer>
-          <Typography sx={{ mb: 4 }} variant="h6">
+          <Typography sx={{ mb: 4, textAlign: "center" }} variant="h6">
             Log In to Your Account!
           </Typography>
 
@@ -98,6 +98,14 @@ const Login = () => {
                     name="password"
                     required
                   />
+
+                  <Box>
+                    <FormLink to="/forgot-password" underline="none">
+                      <Typography variant="body2">
+                        Forgot your password?
+                      </Typography>
+                    </FormLink>
+                  </Box>
 
                   <Button
                     color="secondary"
