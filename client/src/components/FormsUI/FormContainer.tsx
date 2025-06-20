@@ -1,5 +1,5 @@
 // MUI import
-import { Link, Container, Box, Grid, type LinkProps } from "@mui/material";
+import { Box, Grid, Link, type LinkProps } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import {
   Link as RouterLink,
@@ -27,7 +27,7 @@ interface FormContainerProps {
 // Main Component
 const FormContainer = ({ children }: FormContainerProps) => {
   return (
-    <Container>
+    <Box sx={{ my: "auto" }}>
       <Grid
         container
         justifyContent="center"
@@ -35,18 +35,22 @@ const FormContainer = ({ children }: FormContainerProps) => {
         sx={{ mt: 8, mb: 10 }}
       >
         <Grid
-          size={{ xs: 12, md: 8, lg: 5.5 }}
-          sx={{
+          size={{ xs: 11, sm: 10, md: 7, lg: 6, xl: 4 }}
+          sx={(theme) => ({
             py: 3,
             px: { xs: 2, sm: 5 },
-            border: "primary.main",
-            boxShadow: 2,
-          }}
+            boxShadow: theme.palette.mode === "light" ? 2 : "none",
+            border: theme.palette.mode === "dark" ? "1px solid" : "none",
+            borderColor:
+              theme.palette.mode === "dark"
+                ? theme.custom.borderColor.form
+                : "transparent",
+          })}
         >
           {children}
         </Grid>
       </Grid>
-    </Container>
+    </Box>
   );
 };
 
