@@ -12,13 +12,34 @@ import { fetchCurrentUser } from "./redux/store/auth/auth-actions";
 // Components
 import Message from "./components/Message";
 import type { AppDispatch, RootState } from "./redux/store";
+import ThemeSwitch from "./components/ThemeSwitch";
+
+// Extending theme
+
+declare module "@mui/material/styles" {
+  interface Theme {
+    custom: {
+      borderColor: {
+        form: string;
+      };
+    };
+  }
+  // allow configuration using `createTheme()`
+  interface ThemeOptions {
+    custom: {
+      borderColor: {
+        form: string;
+      };
+    };
+  }
+}
 
 // Light Theme
 const lightTheme = createTheme({
   palette: {
     mode: "light",
-    primary: { main: "#7C4DFF" },
-    secondary: { main: "#FF4081" },
+    primary: { main: "#165b5e" }, // from background
+    secondary: { main: "#62c4da" }, // from icon
     background: { default: "#F5F5F5", paper: "#FFFFFF" },
     text: { primary: "#444" },
   },
@@ -29,6 +50,12 @@ const lightTheme = createTheme({
     fontWeightMedium: 600,
     fontWeightBold: 700,
   },
+  custom: {
+    borderColor: {
+      form: "#165b5e",
+    },
+  },
+
   shape: {
     borderRadius: 2,
   },
@@ -38,8 +65,8 @@ const lightTheme = createTheme({
 const darkTheme = createTheme({
   palette: {
     mode: "dark",
-    primary: { main: "#B388FF" },
-    secondary: { main: "#FF4081" },
+    primary: { main: "#37a2aa" }, // brighter teal tone
+    secondary: { main: "#62c4da" },
     background: { default: "#121212", paper: "#1E1E1E" },
     text: { primary: "#E0E0E0" },
   },
@@ -50,6 +77,11 @@ const darkTheme = createTheme({
     fontWeightMedium: 600,
     fontWeightBold: 700,
   },
+  custom: {
+    borderColor: {
+      form: "#444", // or use grey[600]
+    },
+  },
   shape: {
     borderRadius: 2,
   },
@@ -59,10 +91,9 @@ function App() {
   const dispatch = useDispatch<AppDispatch>();
   const { user } = useSelector((state: RootState) => state.auth);
   const { type, message } = useSelector((state: RootState) => state.message);
-  console.log("message");
 
   const [isDarkMode, setIsDarkMode] = useState(false);
-  // const handleThemeToggle = () => setIsDarkMode((prev) => !prev);
+  const handleThemeToggle = () => setIsDarkMode((prev) => !prev);
 
   // Fetch user info and token from cookie on initial load
   useEffect(() => {
@@ -80,6 +111,20 @@ function App() {
         >
           <AppRoutes />
           {message && <Message message={message} type={type as AlertColor} />}
+
+          <Box
+            sx={{
+              position: "fixed",
+              bottom: 16,
+              right: 16,
+              zIndex: 1300, // above most other content
+            }}
+          >
+            <ThemeSwitch
+              onThemeChange={handleThemeToggle}
+              isDarkMode={isDarkMode}
+            />
+          </Box>
         </Box>
       </Router>
     </ThemeProvider>
