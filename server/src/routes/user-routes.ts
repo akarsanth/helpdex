@@ -9,6 +9,7 @@ import {
   forgotPassword,
   resetPassword,
   resendResetOtp,
+  logout,
 } from "../controllers/user-controllers";
 import { protect } from "../middlewares/auth";
 import { authorizeRoles } from "../middlewares/authorize";
@@ -22,6 +23,7 @@ router.post("/resend-verification", resendVerification);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password", resetPassword);
 router.post("/resend-reset-otp", resendResetOtp);
+router.get("/logout", logout);
 
 // Admin
 router.post("/:id/approve", protect, authorizeRoles("admin"), approveUser);

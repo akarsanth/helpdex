@@ -420,3 +420,17 @@ export const resendResetOtp = asyncHandler(
     res.status(200).json({ message: "OTP has been resent to your email." });
   }
 );
+
+// @desc    Logout user by clearing refresh token cookie
+// @route   POST /api/v1/users/logout
+// @access  Public
+export const logout = asyncHandler(async (req: Request, res: Response) => {
+  res.clearCookie("refreshToken", {
+    path: "/api/v1/users/refresh-token",
+    httpOnly: true,
+    sameSite: "strict", // or "Lax"
+    secure: process.env.NODE_ENV === "production",
+  });
+
+  res.status(200).json({ msg: "Logged out successfully" });
+});
