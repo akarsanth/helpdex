@@ -1,17 +1,20 @@
 import { Request, Response, NextFunction } from "express";
 
-export const authorizeAdmin = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    if (req.user?.role !== "admin") {
-      res.status(403);
-      throw new Error("Access denied: Admins only");
+// Reusable middleware that checks if the user has one of the allowed roles
+export const authorizeRoles = (...allowedRoles: string[]) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    try {
+      console.log("here");
+      const userRole = req.user?.role;
+
+      if (!userRole || !allowedRoles.includes(userRole)) {
+        res.status(403);
+        throw new Error("Access denied: Insufficient permissions");
+      }
+
+      next();
+    } catch (error) {
+      next(error);
     }
-    next();
-  } catch (error) {
-    next(error);
-  }
+  };
 };
