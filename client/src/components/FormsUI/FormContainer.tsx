@@ -5,6 +5,8 @@ import {
   Link as RouterLink,
   type LinkProps as RouterLinkProps,
 } from "react-router-dom";
+// navbar logo
+import logo from "../../assets/logo.png";
 
 // Merge the props from MUI Link and React Router Link
 type FormLinkProps = LinkProps & RouterLinkProps;
@@ -23,6 +25,18 @@ export const FormLink = styled((props: FormLinkProps) => (
 interface FormContainerProps {
   children: React.ReactNode;
 }
+
+const BrandLogo = styled("img")`
+  height: 80px;
+  width: auto;
+`;
+
+const LogoBox = styled(Box)(() => ({
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  marginBottom: "1rem",
+}));
 
 // Main Component
 const FormContainer = ({ children }: FormContainerProps) => {
@@ -47,6 +61,11 @@ const FormContainer = ({ children }: FormContainerProps) => {
                 : "transparent",
           })}
         >
+          {/* Logo */}
+          <LogoBox>
+            <BrandLogo src={logo} alt="brand logo" />
+          </LogoBox>
+
           {children}
         </Grid>
       </Grid>
