@@ -11,7 +11,7 @@ import {
   resendResetOtp,
 } from "../controllers/user-controllers";
 import { protect } from "../middlewares/auth";
-import { authorizeAdmin } from "../middlewares/authorize";
+import { authorizeRoles } from "../middlewares/authorize";
 const router = express.Router();
 
 router.post("/", register);
@@ -24,6 +24,6 @@ router.post("/reset-password", resetPassword);
 router.post("/resend-reset-otp", resendResetOtp);
 
 // Admin
-router.post("/:id/approve", protect, authorizeAdmin, approveUser);
+router.post("/:id/approve", protect, authorizeRoles("admin"), approveUser);
 
 export default router;
