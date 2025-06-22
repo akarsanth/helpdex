@@ -1,4 +1,4 @@
-import MenuIcon from "@mui/icons-material/Menu";
+import React from "react";
 import {
   AppBar,
   Box,
@@ -6,12 +6,59 @@ import {
   Divider,
   Drawer,
   IconButton,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
   Toolbar,
   Typography,
 } from "@mui/material";
-import React from "react";
-import { Outlet } from "react-router-dom";
+import MenuIcon from "@mui/icons-material/Menu";
+import InboxIcon from "@mui/icons-material/MoveToInbox";
+import MailIcon from "@mui/icons-material/Mail";
+import { useNavigate, Outlet } from "react-router-dom";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../redux/store";
 const drawerWidth = 240;
+
+const roleLinks: Record<
+  string,
+  { label: string; path: string; icon: React.ReactNode }[]
+> = {
+  client: [
+    { label: "My Tickets", path: "/dashboard/my-tickets", icon: <InboxIcon /> },
+    {
+      label: "Create Ticket",
+      path: "/dashboard/create-ticket",
+      icon: <MailIcon />,
+    },
+    { label: "Profile", path: "/dashboard/profile", icon: <InboxIcon /> },
+  ],
+  developer: [
+    {
+      label: "Assigned Tickets",
+      path: "/dashboard/assigned",
+      icon: <InboxIcon />,
+    },
+    { label: "Progress", path: "/dashboard/progress", icon: <MailIcon /> },
+    { label: "Profile", path: "/dashboard/profile", icon: <InboxIcon /> },
+  ],
+  qa: [
+    {
+      label: "All Tickets",
+      path: "/dashboard/all-tickets",
+      icon: <InboxIcon />,
+    },
+    { label: "Categories", path: "/dashboard/categories", icon: <MailIcon /> },
+    { label: "Statuses", path: "/dashboard/statuses", icon: <InboxIcon /> },
+  ],
+  admin: [
+    { label: "Users", path: "/dashboard/users", icon: <InboxIcon /> },
+    { label: "Settings", path: "/dashboard/settings", icon: <MailIcon /> },
+    { label: "Reports", path: "/dashboard/reports", icon: <InboxIcon /> },
+  ],
+};
 
 interface Props {
   window?: () => Window;
@@ -20,6 +67,10 @@ interface Props {
 export default function DashboardLayout(props: Props) {
   const { window } = props;
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const navigate = useNavigate();
+
+  const role = useSelector((state: RootState) => state.auth.user?.role);
+  const links = roleLinks[role || ""] || [];
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -29,6 +80,16 @@ export default function DashboardLayout(props: Props) {
     <div>
       <Toolbar />
       <Divider />
+      <List>
+        {links.map(({ label, path, icon }) => (
+          <ListItem key={label} disablePadding onClick={() => navigate(path)}>
+            <ListItemButton>
+              <ListItemIcon>{icon}</ListItemIcon>
+              <ListItemText primary={label} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
     </div>
   );
 
