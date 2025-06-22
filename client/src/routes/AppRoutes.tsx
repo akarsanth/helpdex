@@ -9,6 +9,9 @@ import ActivateAccount from "../pages/ActivateAccount";
 import ForgotPassword from "../pages/ForgotPassword";
 import ResetPassword from "../pages/ResetPassword";
 
+// layout
+import DashboardLayout from "../components/Dashboard/DashboardLayout";
+
 const AppRoutes = () => {
   return (
     <Routes>
@@ -22,10 +25,10 @@ const AppRoutes = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
-      {/* Protected routes */}
       <Route element={<ProtectedRoutes />}>
-        <Route path="/dashboard" element={<Dashboard />} />
-        {/* Add more protected routes here */}
+        <Route element={<DashboardLayout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+        </Route>
       </Route>
     </Routes>
   );
