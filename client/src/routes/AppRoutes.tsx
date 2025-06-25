@@ -1,12 +1,12 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import ProtectedRoutes from "./ProtectedRoutes";
 
 // Pages
+import ActivateAccount from "../pages/ActivateAccount";
 import Dashboard from "../pages/Dashboard";
+import ForgotPassword from "../pages/ForgotPassword";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
-import ActivateAccount from "../pages/ActivateAccount";
-import ForgotPassword from "../pages/ForgotPassword";
 import ResetPassword from "../pages/ResetPassword";
 import Unauthorized from "../pages/Unauthorized";
 
