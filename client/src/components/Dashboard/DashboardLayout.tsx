@@ -14,7 +14,12 @@ import {
   ListItemText,
   Toolbar,
   Typography,
+  Avatar,
+  Menu,
+  MenuItem,
+  Tooltip,
 } from "@mui/material";
+
 import MenuIcon from "@mui/icons-material/Menu";
 import InboxIcon from "@mui/icons-material/MoveToInbox";
 import MailIcon from "@mui/icons-material/Mail";
@@ -23,12 +28,16 @@ import { useSelector } from "react-redux";
 import type { RootState } from "../../redux/store";
 import { styled } from "@mui/material";
 
+// Set drawer width
 const drawerWidth = 240;
+
+// Styled logo inside the sidebar
 const BrandLogo = styled("img")`
   height: 65px;
   width: auto;
 `;
 
+// Role-based sidebar links
 const roleLinks: Record<
   string,
   { label: string; path: string; icon: React.ReactNode }[]
@@ -71,21 +80,48 @@ interface Props {
   window?: () => Window;
 }
 
-// Main Component
 export default function DashboardLayout(props: Props) {
+  const { window } = props;
+  const navigate = useNavigate();
   const location = useLocation();
 
-  const { window } = props;
+  // Drawer open state for small screens
   const [mobileOpen, setMobileOpen] = React.useState(false);
-  const navigate = useNavigate();
 
-  const role = useSelector((state: RootState) => state.auth.user?.role);
-  const links = roleLinks[role || ""] || [];
+  // Anchor for avatar menu
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
+  // Get user data from Redux
+  const user = useSelector((state: RootState) => state.auth.user);
+  const role = user?.role || "";
+  const links = roleLinks[role] || [];
+
+  // Open drawer on small screens
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
 
+  // Open avatar dropdown
+  const handleAvatarClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  // Close avatar menu
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  // Get user initials for Avatar
+  const getInitials = () => {
+    if (!user?.name) return "?";
+    return user.name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
+  };
+
+  // Sidebar drawer content
   const drawer = (
     <div>
       <Toolbar
@@ -112,12 +148,15 @@ export default function DashboardLayout(props: Props) {
     </div>
   );
 
+  // For responsive drawer behavior
   const container =
     window !== undefined ? () => window().document.body : undefined;
 
   return (
     <Box sx={{ display: "flex" }}>
       <CssBaseline />
+
+      {/* Top navigation bar */}
       <AppBar
         position="fixed"
         sx={{
@@ -126,6 +165,7 @@ export default function DashboardLayout(props: Props) {
         }}
       >
         <Toolbar>
+          {/* Hamburger icon for mobile */}
           <IconButton
             color="inherit"
             edge="start"
@@ -134,18 +174,52 @@ export default function DashboardLayout(props: Props) {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap>
+
+          {/* Page title */}
+          <Typography variant="h6" noWrap sx={{ flexGrow: 1 }}>
             Dashboard
           </Typography>
+
+          {/* Avatar icon with dropdown menu */}
+          <Tooltip title="Account">
+            <IconButton onClick={handleAvatarClick} sx={{ p: 0 }}>
+              <Avatar>{getInitials()}</Avatar>
+            </IconButton>
+          </Tooltip>
+
+          {/* Menu displayed on avatar click */}
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleMenuClose}
+            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+            transformOrigin={{ vertical: "top", horizontal: "right" }}
+          >
+            {/* Optional user info */}
+            <MenuItem disabled>
+              <Typography variant="body2">{user?.name || "User"}</Typography>
+            </MenuItem>
+            <Divider />
+            <MenuItem
+              onClick={() => {
+                navigate("/dashboard/profile");
+                handleMenuClose();
+              }}
+            >
+              Profile
+            </MenuItem>
+            <MenuItem>Logout</MenuItem>
+          </Menu>
         </Toolbar>
       </AppBar>
 
+      {/* Sidebar drawer */}
       <Box
         component="nav"
         sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
         aria-label="sidebar"
       >
-        {/* Mobile Drawer */}
+        {/* Temporary drawer for mobile */}
         <Drawer
           container={container}
           variant="temporary"
@@ -163,7 +237,7 @@ export default function DashboardLayout(props: Props) {
           {drawer}
         </Drawer>
 
-        {/* Desktop Drawer */}
+        {/* Permanent drawer for desktop */}
         <Drawer
           variant="permanent"
           sx={{
@@ -179,6 +253,7 @@ export default function DashboardLayout(props: Props) {
         </Drawer>
       </Box>
 
+      {/* Main content area */}
       <Box
         component="main"
         sx={{
@@ -187,6 +262,7 @@ export default function DashboardLayout(props: Props) {
           width: { sm: `calc(100% - ${drawerWidth}px)` },
         }}
       >
+        {/* Space to offset AppBar height */}
         <Toolbar />
         <Outlet />
       </Box>
