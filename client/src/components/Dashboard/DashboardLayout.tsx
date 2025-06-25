@@ -1,4 +1,5 @@
 import React from "react";
+import logo from "../../assets/logo.png";
 import {
   AppBar,
   Box,
@@ -17,10 +18,16 @@ import {
 import MenuIcon from "@mui/icons-material/Menu";
 import InboxIcon from "@mui/icons-material/MoveToInbox";
 import MailIcon from "@mui/icons-material/Mail";
-import { useNavigate, Outlet } from "react-router-dom";
+import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../redux/store";
+import { styled } from "@mui/material";
+
 const drawerWidth = 240;
+const BrandLogo = styled("img")`
+  height: 65px;
+  width: auto;
+`;
 
 const roleLinks: Record<
   string,
@@ -64,7 +71,10 @@ interface Props {
   window?: () => Window;
 }
 
+// Main Component
 export default function DashboardLayout(props: Props) {
+  const location = useLocation();
+
   const { window } = props;
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const navigate = useNavigate();
@@ -78,12 +88,21 @@ export default function DashboardLayout(props: Props) {
 
   const drawer = (
     <div>
-      <Toolbar />
+      <Toolbar
+        sx={{
+          minHeight: 64,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <BrandLogo src={logo} />
+      </Toolbar>
       <Divider />
       <List>
         {links.map(({ label, path, icon }) => (
           <ListItem key={label} disablePadding onClick={() => navigate(path)}>
-            <ListItemButton>
+            <ListItemButton selected={location.pathname === path}>
               <ListItemIcon>{icon}</ListItemIcon>
               <ListItemText primary={label} />
             </ListItemButton>
@@ -116,7 +135,7 @@ export default function DashboardLayout(props: Props) {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap>
-            HelpDex Dashboard
+            Dashboard
           </Typography>
         </Toolbar>
       </AppBar>
