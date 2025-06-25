@@ -1,20 +1,33 @@
-import { useSelector } from "react-redux";
-import { useLocation, Navigate, Outlet } from "react-router-dom";
-import type { RootState } from "../redux/store";
+import { useSelector, useDispatch } from "react-redux";
+import { Navigate, useLocation } from "react-router-dom";
+import type { RootState, AppDispatch } from "../redux/store";
+import { setMessage } from "../redux/store/message/message-slice";
 
-const useAuth = (): boolean => {
-  return useSelector((state: RootState) => state.auth.isLoggedIn);
-};
+interface ProtectedRoutesProps {
+  children: React.ReactNode;
+  allowedRoles?: string[]; // Optional: if not passed, allow any logged-in user
+}
 
-const ProtectedRoutes = () => {
+const ProtectedRoutes = ({ children, allowedRoles }: ProtectedRoutesProps) => {
+  const dispatch = useDispatch<AppDispatch>();
   const location = useLocation();
-  const isLoggedIn = useAuth();
+  const { isLoggedIn, user } = useSelector((state: RootState) => state.auth);
 
-  return isLoggedIn ? (
-    <Outlet />
-  ) : (
-    <Navigate to="/login" replace state={{ from: location }} />
-  );
+  if (!isLoggedIn) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+
+  if (allowedRoles && (!user?.role || !allowedRoles.includes(user.role))) {
+    dispatch(
+      setMessage({
+        message: "Not authorized to access this route",
+        type: "error",
+      })
+    );
+    return <Navigate to="/unauthorized" replace />;
+  }
+
+  return <>{children}</>;
 };
 
 export default ProtectedRoutes;

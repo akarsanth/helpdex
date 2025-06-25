@@ -72,9 +72,13 @@ export const logoutUser = createAsyncThunk(
         withCredentials: true,
       });
 
-      window.location.href = "/login";
+      // Return a success indicator — let component handle redirect
+      return true;
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Logout failed";
+      const message =
+        axios.isAxiosError(error) && error.response?.data?.message
+          ? error.response.data.message
+          : "Logout failed";
       return rejectWithValue(message);
     }
   }
