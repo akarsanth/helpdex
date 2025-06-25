@@ -24,9 +24,13 @@ import MenuIcon from "@mui/icons-material/Menu";
 import InboxIcon from "@mui/icons-material/MoveToInbox";
 import MailIcon from "@mui/icons-material/Mail";
 import { useNavigate, Outlet, useLocation } from "react-router-dom";
-import { useSelector } from "react-redux";
-import type { RootState } from "../../redux/store";
 import { styled } from "@mui/material";
+
+// Redux
+import { useDispatch, useSelector } from "react-redux";
+import { type AppDispatch, type RootState } from "../../redux/store";
+import { logoutUser } from "../../redux/store/auth/auth-actions";
+import { setMessage } from "../../redux/store/message/message-slice";
 
 // Set drawer width
 const drawerWidth = 240;
@@ -84,6 +88,7 @@ export default function DashboardLayout(props: Props) {
   const { window } = props;
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useDispatch<AppDispatch>();
 
   // Drawer open state for small screens
   const [mobileOpen, setMobileOpen] = React.useState(false);
@@ -109,6 +114,17 @@ export default function DashboardLayout(props: Props) {
   // Close avatar menu
   const handleMenuClose = () => {
     setAnchorEl(null);
+  };
+
+  const handleLogout = () => {
+    dispatch(logoutUser())
+      .unwrap()
+      .then(() => navigate("/login"))
+      .catch(() =>
+        dispatch(setMessage({ type: "error", message: "Logout failed!" }))
+      );
+    navigate("/login");
+    handleMenuClose();
   };
 
   // Get user initials for Avatar
@@ -208,7 +224,7 @@ export default function DashboardLayout(props: Props) {
             >
               Profile
             </MenuItem>
-            <MenuItem>Logout</MenuItem>
+            <MenuItem onClick={handleLogout}>Logout</MenuItem>
           </Menu>
         </Toolbar>
       </AppBar>
