@@ -8,6 +8,7 @@ import Register from "../pages/Register";
 import ActivateAccount from "../pages/ActivateAccount";
 import ForgotPassword from "../pages/ForgotPassword";
 import ResetPassword from "../pages/ResetPassword";
+import Unauthorized from "../pages/Unauthorized";
 
 // layout
 import DashboardLayout from "../components/Dashboard/DashboardLayout";
@@ -24,6 +25,7 @@ const AppRoutes = () => {
       <Route path="/activate" element={<ActivateAccount />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/unauthorized" element={<Unauthorized />} />
 
       <Route element={<ProtectedRoutes />}>
         <Route element={<DashboardLayout />}>
