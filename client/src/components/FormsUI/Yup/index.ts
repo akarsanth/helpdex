@@ -63,13 +63,14 @@ export const FORGOT_PASS_FORM_VALIDATION = Yup.object().shape({
 });
 
 // ---------------------------
-// Forgot Pass Initial Values
+// Reset Password Initial Values
 // ---------------------------
 export const INITIAL_RESET_PASS_STATE = {
   otp: "",
   newPassword: "",
   confirmPassword: "",
 };
+
 export const RESET_PASS_FORM_VALIDATION = Yup.object().shape({
   otp: Yup.string()
     .required("OTP is required")
@@ -85,4 +86,53 @@ export const RESET_PASS_FORM_VALIDATION = Yup.object().shape({
   confirmPassword: Yup.string()
     .required("Confirm password is required")
     .oneOf([Yup.ref("newPassword")], "Passwords must match"),
+});
+
+// ---------------------------
+// Ticket creation Initial Values
+// ---------------------------
+export const INITIAL_TICKET_FORM_STATE = {
+  title: "",
+  description: "",
+  priority: "",
+  status_id: "",
+  category_id: "",
+  attachments: [], // array of files
+};
+
+
+export const TICKET_FORM_VALIDATION = Yup.object().shape({
+  title: Yup.string()
+    .required("Title is required")
+    .max(100, "Title must be under 100 characters"),
+
+  description: Yup.string()
+    .required("Description is required")
+    .max(2000, "Description must be under 2000 characters"),
+
+  priority: Yup.string()
+    .required("Priority is required")
+    .oneOf(["low", "medium", "high", "urgent"], "Invalid priority"),
+
+  status_id: Yup.string()
+    .required("Status is required")
+    .matches(/^[a-f\d]{24}$/i, "Invalid status ID"),
+
+  category_id: Yup.string()
+    .required("Category is required")
+    .matches(/^[a-f\d]{24}$/i, "Invalid category ID"),
+
+  attachments: Yup.array()
+    .of(
+      Yup.mixed()
+        .test("fileSize", "File too large (max 5MB)", (file) =>
+          file ? file.size <= 5 * 1024 * 1024 : true
+        )
+        .test("fileType", "Unsupported file type", (file) =>
+          file
+            ? ["image/jpeg", "image/png", "application/pdf"].includes(file.type)
+            : true
+        )
+    )
+    .nullable(),
 });
