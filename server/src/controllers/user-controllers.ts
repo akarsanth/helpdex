@@ -179,7 +179,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
       email: user.email,
     });
 
-    const activationUrl = ${config.domain}/activate?token=${activationToken};
+    const activationUrl = `${config.domain}/activate?token=${activationToken}`;
 
     await sendEmail({
       to: email,
