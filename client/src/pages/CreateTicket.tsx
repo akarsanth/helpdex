@@ -1,7 +1,169 @@
-import React from "react";
+import { useReducer } from "react";
+import { Formik, Form as FormikForm, type FormikHelpers } from "formik";
+import {
+  INITIAL_TICKET_FORM_STATE,
+  TICKET_FORM_VALIDATION,
+} from "../components/FormsUI/Yup";
+
+// UI components
+import Textfield from "../components/FormsUI/Textfield";
+import Select from "../components/FormsUI/Select";
+import Button from "../components/FormsUI/Button";
+import FormFields from "../components/FormsUI/FormFieldsWrapper";
+import FileUpload from "../components/FormsUI/FileUpload";
+
+// MUI
+import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
+import Alert from "@mui/material/Alert";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
+import { setMessage } from "../redux/store/message/message-slice";
+import { useDispatch } from "react-redux";
+import type { AppDispatch } from "../redux/store";
+
+// Types
+interface TicketFormValues {
+  title: string;
+  description: string;
+  priority: string;
+  status_id: string;
+  category_id: string;
+  attachments: string[];
+}
+
+interface TicketState {
+  isLoading: boolean;
+  success: string | null;
+  error: string | null;
+}
+
+const initialState: TicketState = {
+  isLoading: false,
+  success: null,
+  error: null,
+};
+
+type TicketAction =
+  | { type: "REQUEST" }
+  | { type: "SUCCESS"; payload: string }
+  | { type: "FAIL"; payload: string };
+
+function reducer(state: TicketState, action: TicketAction): TicketState {
+  switch (action.type) {
+    case "REQUEST":
+      return { ...state, isLoading: true, success: null, error: null };
+    case "SUCCESS":
+      return { isLoading: false, success: action.payload, error: null };
+    case "FAIL":
+      return { isLoading: false, success: null, error: action.payload };
+    default:
+      return state;
+  }
+}
+
+const PRIORITY_OPTIONS = [
+  { id: "low", value: "low", text: "Low" },
+  { id: "medium", value: "medium", text: "Medium" },
+  { id: "high", value: "high", text: "High" },
+  { id: "urgent", value: "urgent", text: "Urgent" },
+];
 
 const CreateTicket = () => {
-  return <div>CreateTicket</div>;
+  const appDispatch = useDispatch<AppDispatch>();
+  const [state, dispatch] = useReducer(reducer, initialState);
+
+  const handleSubmit = async (
+    values: TicketFormValues,
+    helpers: FormikHelpers<TicketFormValues>
+  ) => {
+    dispatch({ type: "REQUEST" });
+
+    try {
+      // const { data } = await createTicket(values);
+      // dispatch({ type: "SUCCESS", payload: data.message || "Ticket submitted" });
+      helpers.resetForm();
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Submission failed";
+      dispatch({ type: "FAIL", payload: msg });
+    }
+  };
+
+  return (
+    <Box sx={{ maxWidth: 600, mx: "auto", mt: 4, px: 2 }}>
+      <Typography variant="h6" sx={{ mb: 4, textAlign: "center" }}>
+        Create Support Ticket
+      </Typography>
+
+      <Formik<TicketFormValues>
+        initialValues={INITIAL_TICKET_FORM_STATE}
+        validationSchema={TICKET_FORM_VALIDATION}
+        onSubmit={handleSubmit}
+      >
+        {({ setFieldValue, values }) => (
+          <FormikForm>
+            <FormFields>
+              <Textfield name="title" label="Title" required />
+              <Textfield
+                name="description"
+                label="Description"
+                multiline
+                rows={4}
+                required
+              />
+              <Select
+                name="priority"
+                label="Priority"
+                list={PRIORITY_OPTIONS}
+                required
+              />
+              <Select
+                name="status_id"
+                label="Status"
+                list={[]} // Replace with backend options
+                required
+              />
+              <Select
+                name="category_id"
+                label="Category"
+                list={[]} // Replace with backend options
+                required
+              />
+
+              <FileUpload
+                onUploadSuccess={(id) =>
+                  setFieldValue("attachments", [...values.attachments, id])
+                }
+                onUploadError={(msg) => {
+                  dispatch({ type: "FAIL", payload: msg });
+                  appDispatch(setMessage({ type: "error", message: msg }));
+                }}
+              />
+
+              <Button
+                color="secondary"
+                endIcon={<KeyboardArrowRightIcon />}
+                disableElevation
+                loading={state.isLoading}
+              >
+                Create Ticket
+              </Button>
+
+              {state.success && (
+                <Alert severity="success" sx={{ mt: 2 }}>
+                  {state.success}
+                </Alert>
+              )}
+              {state.error && (
+                <Alert severity="error" sx={{ mt: 2 }}>
+                  {state.error}
+                </Alert>
+              )}
+            </FormFields>
+          </FormikForm>
+        )}
+      </Formik>
+    </Box>
+  );
 };
 
 export default CreateTicket;
