@@ -65,9 +65,7 @@ const Register = () => {
   const { isLoading, error, success } = state;
   const formikRef = useRef(null);
 
-  // For resend process
   const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
-  const [isEmailVerified, setIsEmailVerified] = useState(true);
 
   const submitHandler = async (
     values: typeof INITIAL_REGISTER_FORM_STATE,
@@ -78,15 +76,18 @@ const Register = () => {
     const {
       data,
       error,
-      isEmailVerified: emailVerifiedFlag,
-      unverifiedEmail,
+      unverifiedEmail: backendUnverifiedEmail,
     } = await registerUser(values);
 
-    setIsEmailVerified(emailVerifiedFlag);
-    setUnverifiedEmail(unverifiedEmail || null);
     if (error) {
+      if (backendUnverifiedEmail) {
+        setUnverifiedEmail(backendUnverifiedEmail); // case: user already exists but not verified
+      } else {
+        setUnverifiedEmail(null);
+      }
       dispatch({ type: "FAIL", payload: error });
     } else {
+      setUnverifiedEmail(values.email); // case: first-time successful registration
       dispatch({ type: "SUCCESS", payload: data.message });
       resetForm();
     }
@@ -95,7 +96,7 @@ const Register = () => {
   return (
     <FormContainer>
       <Typography sx={{ mb: 4, textAlign: "center" }} variant="h6">
-        Register a account!
+        Register an account!
       </Typography>
 
       <Formik
@@ -135,8 +136,13 @@ const Register = () => {
             {success && <Alert severity="success">{success}</Alert>}
             {error && <Alert severity="error">{error}</Alert>}
 
-            {!isEmailVerified && unverifiedEmail && (
-              <ResendVerificationButton email={unverifiedEmail} />
+            {unverifiedEmail && (
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="body2">
+                  Didn’t receive the verification email? Click below to resend.
+                </Typography>
+                <ResendVerificationButton email={unverifiedEmail} />
+              </Box>
             )}
           </FormFields>
         </FormikForm>
