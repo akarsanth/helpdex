@@ -22,6 +22,7 @@ interface AuthState {
   accessToken: string | null;
   error: string | null;
   message: string | null;
+  unverifiedEmail?: string | null;
 }
 
 const initialState: AuthState = {
@@ -31,6 +32,7 @@ const initialState: AuthState = {
   accessToken: null,
   error: null,
   message: null,
+  unverifiedEmail: null,
 };
 
 const authSlice = createSlice({
@@ -41,6 +43,7 @@ const authSlice = createSlice({
     clearStatus: (state) => {
       state.error = null;
       state.message = null;
+      state.unverifiedEmail = null;
     },
   },
   extraReducers: (builder) => {
@@ -56,10 +59,23 @@ const authSlice = createSlice({
         state.user = action.payload.user;
         state.isLoggedIn = true;
         state.message = "Login successful";
+        state.unverifiedEmail = null;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+
+        if (action.payload && typeof action.payload === "object") {
+          const payload = action.payload as {
+            message: string;
+            unverifiedEmail?: string;
+          };
+          state.error = payload.message;
+          state.unverifiedEmail = payload.unverifiedEmail ?? null;
+        } else {
+          state.error = "Login failed";
+          state.unverifiedEmail = null;
+        }
+
         state.message = null;
       })
 
