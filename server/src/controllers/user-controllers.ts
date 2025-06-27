@@ -23,9 +23,7 @@ interface RegisterRequestBody {
 // @desc    Register a new user
 // @route   POST /api/v1/users
 // @access  Public
-// @desc    Register a new user
-// @route   POST /api/v1/users
-// @access  Public
+// (Lines 26-28 removed as they are duplicates of lines 23-25)
 export const register = asyncHandler(
   async (req: Request<{}, {}, RegisterRequestBody>, res: Response) => {
     const { name, companyName, email, password } = req.body;
