@@ -1,4 +1,6 @@
 import React from "react";
+import { useEffect } from "react";
+import { fetchMeta } from "../../redux/store/global/global-slice";
 import logo from "../../assets/logo.png";
 import {
   AppBar,
@@ -98,8 +100,17 @@ export default function DashboardLayout(props: Props) {
 
   // Get user data from Redux
   const user = useSelector((state: RootState) => state.auth.user);
+  const accessToken = useSelector((state: RootState) => state.auth.accessToken);
+
   const role = user?.role || "";
   const links = roleLinks[role] || [];
+
+  // To fetch category and status
+  useEffect(() => {
+    if (accessToken) {
+      dispatch(fetchMeta());
+    }
+  }, [dispatch, accessToken]);
 
   // Open drawer on small screens
   const handleDrawerToggle = () => {
