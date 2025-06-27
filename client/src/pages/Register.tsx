@@ -138,9 +138,6 @@ const Register = () => {
 
             {unverifiedEmail && (
               <Box sx={{ mt: 2 }}>
-                <Typography variant="body2">
-                  Didn’t receive the verification email? Click below to resend.
-                </Typography>
                 <ResendVerificationButton email={unverifiedEmail} />
               </Box>
             )}
