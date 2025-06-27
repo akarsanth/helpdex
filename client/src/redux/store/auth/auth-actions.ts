@@ -14,21 +14,23 @@ export const loginUser = createAsyncThunk(
         withCredentials: true,
       });
 
-      console.log(data);
-
       return {
         token: data.accessToken,
         user: data.user,
       };
-    } catch (error: unknown) {
-      const axiosError = error as AxiosError<{ message: string }>;
+    } catch (error) {
+      const axiosError = error as AxiosError<{
+        message: string;
+        unverifiedEmail?: string;
+      }>;
 
-      const message =
-        axiosError.response?.data?.message ||
-        axiosError.message ||
-        "Login failed.";
-
-      return rejectWithValue(message);
+      return rejectWithValue({
+        message:
+          axiosError.response?.data?.message ||
+          axiosError.message ||
+          "Login failed.",
+        unverifiedEmail: axiosError.response?.data?.unverifiedEmail,
+      });
     }
   }
 );
