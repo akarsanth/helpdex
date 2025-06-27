@@ -156,30 +156,30 @@ export const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
 // @access  Public
 export const login = asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = req.body;
-  console.log(email, password);
 
-  // Check for email and password
+  // Validate email and password presence
   if (!email || !password) {
     res.status(400);
     throw new Error("Email and password are required.");
   }
 
+  // Look up user by email
   const user = await User.findOne({ email });
 
+  // If user not found or password doesn't match
   if (!user || !(await user.matchPassword(password))) {
     res.status(400);
     throw new Error("Invalid email or password.");
   }
 
-  // Check if email is verified
+  // If user's email is not verified, block login and send a new activation email
   if (!user.isEmailVerified) {
     const activationToken = createActivationToken({
       _id: user._id.toString(),
       email: user.email,
     });
 
-    // Construct email verification URL
-    const activationUrl = `${config.domain}/activate?token=${activationToken}`;
+    const activationUrl = ${config.domain}/activate?token=${activationToken};
 
     await sendEmail({
       to: email,
@@ -190,31 +190,33 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
       buttonUrl: activationUrl,
     });
 
+    // Respond with 403 and include unverifiedEmail for frontend resend flow
     res.status(403).json({
       message: "Email not verified. A verification email has been resent.",
+      unverifiedEmail: email,
     });
     return;
   }
 
-  // Optional: Check if admin has approved
+  // Optional: block login until admin approves user
   if (!user.isApprovedByAdmin) {
     res.status(403);
     throw new Error("Your account is pending admin approval.");
   }
 
-  // Creating refresh token
+  // Generate refresh token for session handling
   const refreshToken = createRefreshToken({ _id: user._id });
 
-  // Setting refresh token in the cookie
+  // Store refresh token in secure HTTP-only cookie
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
-    secure: false, // false for Postman/local testing
-    sameSite: "lax", // important for cookies to show up
+    secure: false, // Set to true in production with HTTPS
+    sameSite: "lax",
     path: "/api/v1/users/refresh-token",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 
-  // Respond only with success
+  // Respond with success message
   res.status(200).json({ message: "Login successful." });
 });
 
