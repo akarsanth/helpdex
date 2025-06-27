@@ -23,6 +23,7 @@ interface RegisterRequestBody {
 // @desc    Register a new user
 // @route   POST /api/v1/users
 // @access  Public
+// (Lines 26-28 removed as they are duplicates of lines 23-25)
 export const register = asyncHandler(
   async (req: Request<{}, {}, RegisterRequestBody>, res: Response) => {
     const { name, companyName, email, password } = req.body;
@@ -35,14 +36,31 @@ export const register = asyncHandler(
 
     // Check if user already exists
     const userExists = await User.findOne({ email });
+
     if (userExists) {
       if (!userExists.isEmailVerified) {
-        res.status(409).json({
-          message: `User with email '${userExists.email}' already registered but email not verified.`,
-          isEmailVerified: false,
+        // Send activation token again
+        const activationToken = createActivationToken({
+          _id: userExists._id.toString(),
           email: userExists.email,
         });
 
+        const activationUrl = `${config.domain}/activate?token=${activationToken}`;
+
+        await sendEmail({
+          to: userExists.email,
+          subject: "Verify your HelpDex account",
+          heading: "Email Verification Reminder",
+          message:
+            "You previously registered but didn’t verify your email. Click the button below to verify your account.",
+          buttonText: "Verify Now",
+          buttonUrl: activationUrl,
+        });
+
+        res.status(409).json({
+          message: `User with email '${userExists.email}' already exists but is not verified.`,
+          unverifiedEmail: userExists.email,
+        });
         return;
       }
 
@@ -53,7 +71,7 @@ export const register = asyncHandler(
     // Hash password before storing
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user document
+    // Create new user
     const user = await User.create({
       name,
       email,
@@ -62,16 +80,13 @@ export const register = asyncHandler(
     });
 
     if (user) {
-      // Generate activation token
       const activationToken = createActivationToken({
         _id: user._id.toString(),
         email: user.email,
       });
 
-      // Construct email verification URL
       const activationUrl = `${config.domain}/activate?token=${activationToken}`;
 
-      // Send email verification link
       await sendEmail({
         to: email,
         subject: "Verify your HelpDex account",
@@ -82,7 +97,6 @@ export const register = asyncHandler(
         buttonUrl: activationUrl,
       });
 
-      // Respond with success message
       res.status(201).json({
         message: `Registration successful. Please check your email "${email}" to activate your account.`,
       });
