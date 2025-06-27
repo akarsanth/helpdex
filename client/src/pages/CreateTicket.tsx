@@ -17,16 +17,17 @@ import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import Alert from "@mui/material/Alert";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
+
+// Redux
+import { useDispatch, useSelector } from "react-redux";
 import { setMessage } from "../redux/store/message/message-slice";
-import { useDispatch } from "react-redux";
-import type { AppDispatch } from "../redux/store";
+import type { AppDispatch, RootState } from "../redux/store";
 
 // Types
 interface TicketFormValues {
   title: string;
   description: string;
   priority: string;
-  status_id: string;
   category_id: string;
   attachments: string[];
 }
@@ -71,6 +72,9 @@ const PRIORITY_OPTIONS = [
 const CreateTicket = () => {
   const appDispatch = useDispatch<AppDispatch>();
   const [state, dispatch] = useReducer(reducer, initialState);
+
+  // Fetch categories from Redux state
+  const categories = useSelector((state: RootState) => state.meta.categories);
 
   const handleSubmit = async (
     values: TicketFormValues,
@@ -117,15 +121,13 @@ const CreateTicket = () => {
                 required
               />
               <Select
-                name="status_id"
-                label="Status"
-                list={[]} // Replace with backend options
-                required
-              />
-              <Select
                 name="category_id"
                 label="Category"
-                list={[]} // Replace with backend options
+                list={categories.map((cat) => ({
+                  id: cat._id,
+                  value: cat._id,
+                  text: cat.name,
+                }))}
                 required
               />
 
