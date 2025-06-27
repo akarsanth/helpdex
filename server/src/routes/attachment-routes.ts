@@ -29,7 +29,9 @@ router.post("/upload", async (req, res) => {
             resource_type: "auto",
           },
           (error, result) => {
-            if (error || !result) return reject(error);
+            if (error || !result) {
+              return reject(error || new Error("Cloudinary upload failed with no specific error provided."));
+            }
             resolve(result);
           }
         );
