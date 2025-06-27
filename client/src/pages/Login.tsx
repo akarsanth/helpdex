@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 // Router
 import { useLocation, useNavigate } from "react-router-dom";
@@ -21,6 +21,7 @@ import FormContainer, { FormLink } from "../components/FormsUI/FormContainer";
 import Textfield from "../components/FormsUI/Textfield";
 import TextfieldPw from "../components/FormsUI/Textfield/TextFieldPassword";
 import Button from "../components/FormsUI/Button";
+import ResendVerificationButton from "../components/ResendVerficationButton";
 
 // MUI imports
 import Typography from "@mui/material/Typography";
@@ -31,11 +32,20 @@ import FormFieldsWrapper from "../components/FormsUI/FormFieldsWrapper";
 
 type LoginFormValues = typeof INITIAL_LOGIN_FORM_STATE;
 
+// Error type for async thunk rejection
+interface LoginError {
+  message: string;
+  unverifiedEmail?: string;
+}
+
 // Main Component
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch<AppDispatch>();
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | undefined>(
+    undefined
+  );
 
   const { error, message, isLoggedIn, user, isLoading } = useSelector(
     (state: RootState) => state.auth
@@ -63,16 +73,19 @@ const Login = () => {
     { setSubmitting, setStatus }: FormikHelpers<LoginFormValues>
   ) => {
     try {
-      // awaiting dispatch
-      await dispatch(loginUser(values));
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        setStatus(error.message);
-      } else {
-        setStatus("An unexpected error occurred");
+      const resultAction = await dispatch(loginUser(values));
+
+      // Check if the action was rejected with a value
+      if (loginUser.rejected.match(resultAction) && resultAction.payload) {
+        const payload = resultAction.payload as LoginError;
+        console.log(payload);
+        setStatus(payload.message);
+        setUnverifiedEmail(payload.unverifiedEmail);
       }
+    } catch {
+      // setStatus("An unexpected error occurred");
     } finally {
-      setSubmitting(false); // Make sure to set submitting to false after async operation
+      setSubmitting(false);
     }
   };
 
@@ -89,47 +102,49 @@ const Login = () => {
             validationSchema={LOGIN_FORM_VALIDATION}
             onSubmit={submitHandler}
           >
-            {({ status }) => (
-              <FormikForm>
-                <FormFieldsWrapper>
-                  <Textfield label="Enter Email" name="email" required />
-                  <TextfieldPw
-                    label="Enter Password"
-                    name="password"
-                    required
-                  />
+            {/* {({ status }) => ( */}
+            <FormikForm>
+              <FormFieldsWrapper>
+                <Textfield label="Enter Email" name="email" required />
+                <TextfieldPw label="Enter Password" name="password" required />
 
-                  <Box>
-                    <FormLink to="/forgot-password" underline="none">
-                      <Typography variant="body2">
-                        Forgot your password?
-                      </Typography>
-                    </FormLink>
+                <Box>
+                  <FormLink to="/forgot-password" underline="none">
+                    <Typography variant="body2">
+                      Forgot your password?
+                    </Typography>
+                  </FormLink>
+                </Box>
+
+                <Button
+                  color="secondary"
+                  endIcon={<KeyboardArrowRightIcon />}
+                  disableElevation
+                  loading={isLoading}
+                  // we can use isSubmitting prop from formik as well
+                >
+                  Login
+                </Button>
+
+                <Box sx={{ display: "flex", gap: 1 }}>
+                  <Typography variant="body2">Create new account?</Typography>
+                  <FormLink to="/register" underline="none">
+                    <Typography variant="body2">Sign up!</Typography>
+                  </FormLink>
+                </Box>
+
+                {status && <Alert severity="error">{status}</Alert>}
+                {error && <Alert severity="error">{error}</Alert>}
+                {message && <Alert severity="info">{message}</Alert>}
+
+                {unverifiedEmail && (
+                  <Box mt={2}>
+                    <ResendVerificationButton email={unverifiedEmail} />
                   </Box>
-
-                  <Button
-                    color="secondary"
-                    endIcon={<KeyboardArrowRightIcon />}
-                    disableElevation
-                    loading={isLoading}
-                    // we can use isSubmitting prop from formik as well
-                  >
-                    Login
-                  </Button>
-
-                  <Box sx={{ display: "flex", gap: 1 }}>
-                    <Typography variant="body2">Create new account?</Typography>
-                    <FormLink to="/register" underline="none">
-                      <Typography variant="body2">Sign up!</Typography>
-                    </FormLink>
-                  </Box>
-
-                  {status && <Alert severity="error">{status}</Alert>}
-                  {error && <Alert severity="error">{error}</Alert>}
-                  {message && <Alert severity="info">{message}</Alert>}
-                </FormFieldsWrapper>
-              </FormikForm>
-            )}
+                )}
+              </FormFieldsWrapper>
+            </FormikForm>
+            {/* )} */}
           </Formik>
         </FormContainer>
       )}
