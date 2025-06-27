@@ -1,27 +1,13 @@
-import mongoose from "mongoose";
+import connectDB from "./config/mongodb";
 import Status from "./models/status-model";
 import Category from "./models/category-model";
-import dotenv from "dotenv";
-dotenv.config();
 
-const MONGO_URI = process.env.MONGO_URI;
+const seed = async () => {
+  try {
+    await connectDB();
 
-if (!MONGO_URI) {
-  console.error("❌ MONGO_URI is not defined in .env");
-  process.exit(1);
-}
-
-// Connect to your MongoDB
-mongoose
-  .connect(MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  } as mongoose.ConnectOptions)
-  .then(async () => {
-    console.log("MongoDB connected");
-
-    // Seed statuses
-    await Status.deleteMany({});
+    // Seed Status collection
+    await Status.deleteMany();
     await Status.insertMany([
       { name: "Open", description: "Ticket is newly created" },
       { name: "Acknowledged", description: "Acknowledged by a team member" },
@@ -33,8 +19,8 @@ mongoose
       { name: "Reopened", description: "Reopened after being closed" },
     ]);
 
-    // Seed categories
-    await Category.deleteMany({});
+    // Seed Category collection
+    await Category.deleteMany();
     await Category.insertMany([
       { name: "Bug", description: "A defect or unexpected issue" },
       { name: "Feature Request", description: "New functionality" },
@@ -42,10 +28,12 @@ mongoose
       { name: "Improvement", description: "Enhancement to existing feature" },
     ]);
 
-    console.log("Seeding complete");
-    process.exit();
-  })
-  .catch((err) => {
-    console.error("Error connecting to DB", err);
+    console.log("✅ Seeding completed successfully.");
+    process.exit(0);
+  } catch (error) {
+    console.error("❌ Seeding failed:", error);
     process.exit(1);
-  });
+  }
+};
+
+seed();
