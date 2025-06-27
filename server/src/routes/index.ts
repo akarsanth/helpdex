@@ -8,6 +8,6 @@ import statusRoutes from "./status-routes";
 router.use("/users", userRoutes);
 router.use("/attachments", attachmentRoutes);
 router.use("/categories", categoryRoutes);
-router.use("/statues", statusRoutes);
+router.use("/statuses", statusRoutes);
 
 export default router;
