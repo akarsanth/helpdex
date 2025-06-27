@@ -31,9 +31,22 @@ export const fetchMeta = createAsyncThunk(
   "meta/fetchMeta",
   async (_, thunkAPI) => {
     try {
+      // Get token from auth slice
+      const state = thunkAPI.getState() as { auth: { accessToken: string } };
+      const token = state.auth.accessToken;
+
+      // Config with Authorization header
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        withCredentials: true,
+      };
+
+      // Parallel requests with token
       const [categoryRes, statusRes] = await Promise.all([
-        axios.get("/api/v1/categories"),
-        axios.get("/api/v1/statuses"),
+        axios.get("/api/v1/categories", config),
+        axios.get("/api/v1/statuses", config),
       ]);
 
       return {
