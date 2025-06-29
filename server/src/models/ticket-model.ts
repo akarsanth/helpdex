@@ -1,10 +1,12 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
 
+export type TicketPriority = "low" | "medium" | "high" | "urgent";
+
 export interface ITicket extends Document {
   title: string;
   description: string;
-  priority: string;
-  status_id: Types.ObjectId;
+  priority: TicketPriority;
+  status_id: Types.ObjectId; // required, but set at controller level
   category_id: Types.ObjectId;
   created_by: Types.ObjectId;
   assigned_by?: Types.ObjectId;
@@ -20,9 +22,21 @@ const ticketSchema = new Schema<ITicket>(
   {
     title: { type: String, required: true },
     description: { type: String },
-    priority: { type: String, required: true },
-    status_id: { type: Schema.Types.ObjectId, ref: "Status", required: true },
-    category_id: { type: Schema.Types.ObjectId, ref: "Category", required: true },
+    priority: {
+      type: String,
+      required: true,
+      enum: ["low", "medium", "high", "urgent"],
+    },
+    status_id: {
+      type: Schema.Types.ObjectId,
+      ref: "Status",
+      required: true, // Set to 'Open' in controller
+    },
+    category_id: {
+      type: Schema.Types.ObjectId,
+      ref: "Category",
+      required: true,
+    },
     created_by: { type: Schema.Types.ObjectId, ref: "User", required: true },
     assigned_by: { type: Schema.Types.ObjectId, ref: "User" },
     assigned_to: { type: Schema.Types.ObjectId, ref: "User" },
