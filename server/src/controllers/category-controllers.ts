@@ -3,7 +3,7 @@ import Category from "../models/category-model";
 
 // @desc    Get all categories
 // @route   GET /api/v1/categories
-// @access  Public or Protected (based on use-case)
+// @access  Protected
 export const getAllCategories = async (
   req: Request,
   res: Response,
