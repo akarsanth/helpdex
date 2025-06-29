@@ -22,6 +22,7 @@ import Box from "@mui/material/Box";
 import { useDispatch, useSelector } from "react-redux";
 import { setMessage } from "../redux/store/message/message-slice";
 import type { AppDispatch, RootState } from "../redux/store";
+import { createTicket } from "../services/ticket-service";
 
 // Types
 interface TicketFormValues {
@@ -83,12 +84,14 @@ const CreateTicket = () => {
     dispatch({ type: "REQUEST" });
 
     try {
-      // const { data } = await createTicket(values);
-      // dispatch({ type: "SUCCESS", payload: data.message || "Ticket submitted" });
+      const { message } = await createTicket(values);
+      dispatch({ type: "SUCCESS", payload: message });
+      appDispatch(setMessage({ type: "success", message }));
       helpers.resetForm();
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : "Submission failed";
       dispatch({ type: "FAIL", payload: msg });
+      appDispatch(setMessage({ type: "error", message: msg }));
     }
   };
 
