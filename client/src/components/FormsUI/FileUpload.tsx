@@ -15,6 +15,8 @@ import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 interface FileUploadProps {
   onUploadSuccess: (id: string) => void;
   onUploadError: (msg: string) => void;
+  setUploading: (uploading: boolean) => void;
+  uploading: boolean;
 }
 
 interface UploadedFileMeta {
@@ -23,8 +25,12 @@ interface UploadedFileMeta {
 }
 
 // Component
-const FileUpload = ({ onUploadSuccess, onUploadError }: FileUploadProps) => {
-  const [uploading, setUploading] = useState(false);
+const FileUpload = ({
+  onUploadSuccess,
+  onUploadError,
+  setUploading,
+  uploading,
+}: FileUploadProps) => {
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>(
     {}
   );
