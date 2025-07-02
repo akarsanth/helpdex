@@ -1,4 +1,5 @@
 import { useReducer, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Formik, Form as FormikForm, type FormikHelpers } from "formik";
 import {
   INITIAL_TICKET_FORM_STATE,
@@ -74,6 +75,7 @@ const PRIORITY_OPTIONS = [
 
 // ---------- Main component ----------
 const CreateTicket = () => {
+  const navigate = useNavigate();
   const appDispatch = useDispatch<AppDispatch>();
   const [state, dispatch] = useReducer(reducer, initialState);
 
@@ -99,9 +101,10 @@ const CreateTicket = () => {
     dispatch({ type: "REQUEST" });
 
     try {
-      const { message } = await createTicket(values);
+      const { message, ticket } = await createTicket(values);
       dispatch({ type: "SUCCESS", payload: message });
       appDispatch(setMessage({ type: "success", message }));
+      navigate(`/dashboard/my-tickets/${ticket._id}`);
       helpers.resetForm();
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : "Submission failed";
