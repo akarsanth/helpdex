@@ -5,6 +5,9 @@ import Status from "../models/status-model";
 import Attachment from "../models/attachment-model";
 import { IUser } from "../models/user-model";
 
+// @desc    Create a new support ticket
+// @route   POST /api/v1/tickets
+// @access  Protected (Client)
 export const createTicket = asyncHandler(
   async (req: Request, res: Response) => {
     const { title, description, priority, category_id, attachments } = req.body;
@@ -42,3 +45,77 @@ export const createTicket = asyncHandler(
     });
   }
 );
+
+// @desc    Get all tickets created by the logged-in user
+// @route   GET /api/v1/tickets/my
+// @access  Protected (Client)
+export const myTickets = asyncHandler(async (req: Request, res: Response) => {
+  const user = req.user as IUser;
+  const userId = user._id;
+
+  const { status, fromDate, toDate, page = "1", limit = "10" } = req.query;
+
+  const pageNum = parseInt(page as string, 10);
+  const limitNum = parseInt(limit as string, 10);
+  const skip = (pageNum - 1) * limitNum;
+
+  const filter: Record<string, any> = {
+    created_by: userId,
+  };
+
+  // Filter by status if provided
+  if (status && typeof status === "string") {
+    filter.status_id = status;
+  }
+
+  // Validate and apply date filters
+  const createdAtFilter: Record<string, Date> = {};
+
+  if (fromDate && typeof fromDate === "string") {
+    const from = new Date(fromDate);
+    if (!isNaN(from.getTime())) {
+      createdAtFilter.$gte = from;
+    }
+  }
+
+  if (toDate && typeof toDate === "string") {
+    const to = new Date(toDate);
+    if (!isNaN(to.getTime())) {
+      createdAtFilter.$lte = to;
+    }
+  }
+
+  if (Object.keys(createdAtFilter).length > 0) {
+    filter.createdAt = createdAtFilter;
+  }
+
+  const [tickets, total] = await Promise.all([
+    Ticket.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum)
+      .populate("status_id", "name")
+      .populate("category_id", "name")
+      .lean()
+      .then((docs) =>
+        docs.map(({ category_id, status_id, ...rest }) => ({
+          ...rest,
+          category: category_id,
+          status: status_id,
+        }))
+      ),
+    Ticket.countDocuments(filter),
+  ]);
+
+  res.status(200).json({
+    success: true,
+    data: tickets,
+    pagination: {
+      total,
+      page: pageNum,
+      limit: limitNum,
+      totalPages: Math.ceil(total / limitNum),
+    },
+  });
+});
+
