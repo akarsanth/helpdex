@@ -20,11 +20,13 @@ import Categories from "../pages/Categories";
 import Statuses from "../pages/Statuses";
 import Users from "../pages/Users";
 import Profile from "../pages/Profile";
+import TicketDetail from "../pages/TicketDetail";
 
 // Layout
 import DashboardLayout from "../components/Dashboard/DashboardLayout";
 
 // Dashboard Route Config
+// route definitions
 const dashboardRoutes = [
   {
     path: "",
@@ -33,6 +35,11 @@ const dashboardRoutes = [
   },
   { path: "create-ticket", element: <CreateTicket />, roles: ["client"] },
   { path: "my-tickets", element: <MyTickets />, roles: ["client"] },
+  {
+    path: "my-tickets/:ticketId",
+    element: <TicketDetail />,
+    roles: ["client"],
+  },
   { path: "assigned", element: <AssignedTickets />, roles: ["developer"] },
   { path: "progress", element: <Progress />, roles: ["developer"] },
   { path: "all-tickets", element: <AllTickets />, roles: ["qa"] },
