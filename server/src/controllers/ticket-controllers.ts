@@ -55,6 +55,10 @@ export const myTickets = asyncHandler(async (req: Request, res: Response) => {
 
   const { status, fromDate, toDate, page = "1", limit = "10" } = req.query;
 
+  const pageNum = parseInt(page as string, 10);
+  const limitNum = parseInt(limit as string, 10);
+  const skip = (pageNum - 1) * limitNum;
+
   const filter: Record<string, any> = {
     created_by: userId,
   };
@@ -64,24 +68,32 @@ export const myTickets = asyncHandler(async (req: Request, res: Response) => {
     filter.status_id = status;
   }
 
-  // Filter by date range if provided
-  if (fromDate || toDate) {
-    filter.createdAt = {};
-    if (fromDate && typeof fromDate === "string") {
-      filter.createdAt.$gte = new Date(fromDate);
-    }
-    if (toDate && typeof toDate === "string") {
-      filter.createdAt.$lte = new Date(toDate);
+  // Validate and apply date filters
+  const createdAtFilter: Record<string, Date> = {};
+
+  if (fromDate && typeof fromDate === "string") {
+    const from = new Date(fromDate);
+    if (!isNaN(from.getTime())) {
+      createdAtFilter.$gte = from;
     }
   }
 
-  const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
+  if (toDate && typeof toDate === "string") {
+    const to = new Date(toDate);
+    if (!isNaN(to.getTime())) {
+      createdAtFilter.$lte = to;
+    }
+  }
+
+  if (Object.keys(createdAtFilter).length > 0) {
+    filter.createdAt = createdAtFilter;
+  }
 
   const [tickets, total] = await Promise.all([
     Ticket.find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(parseInt(limit as string))
+      .limit(limitNum)
       .populate("status_id", "name")
       .populate("category_id", "name")
       .lean()
@@ -100,9 +112,10 @@ export const myTickets = asyncHandler(async (req: Request, res: Response) => {
     data: tickets,
     pagination: {
       total,
-      page: parseInt(page as string),
-      limit: parseInt(limit as string),
-      totalPages: Math.ceil(total / parseInt(limit as string)),
+      page: pageNum,
+      limit: limitNum,
+      totalPages: Math.ceil(total / limitNum),
     },
   });
 });
+
