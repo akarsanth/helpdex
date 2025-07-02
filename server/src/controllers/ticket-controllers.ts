@@ -139,6 +139,7 @@ export const getTicketById = asyncHandler(
     const ticket = await Ticket.findById(ticketId)
       .populate("status_id", "name")
       .populate("category_id", "name")
+      .populate("created_by", "name email")
       .populate("assigned_to", "name email")
       .populate("assigned_by", "name email")
       .populate("verified_by", "name email")
@@ -150,7 +151,7 @@ export const getTicketById = asyncHandler(
     }
 
     // Allow access only if the ticket was created by the logged-in client
-    if (ticket.created_by.toString() !== user._id.toString()) {
+    if (ticket.created_by._id.toString() !== user._id.toString()) {
       res.status(403);
       throw new Error("Access denied. You do not own this ticket.");
     }
