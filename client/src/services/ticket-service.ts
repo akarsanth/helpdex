@@ -23,6 +23,7 @@ interface CreateTicketResponse {
   ticket: Ticket;
 }
 
+// Create Ticket
 export const createTicket = async (
   ticketData: TicketFormValues
 ): Promise<CreateTicketResponse> => {
@@ -38,6 +39,24 @@ export const createTicket = async (
       axiosError.response?.data?.message ||
         axiosError.message ||
         "Ticket creation failed."
+    );
+  }
+};
+
+// Get a single ticket by ID
+export const getTicketById = async (id: string): Promise<Ticket> => {
+  try {
+    const response = await axiosInstance.get<{
+      success: boolean;
+      data: Ticket;
+    }>(`/api/v1/tickets/${id}`);
+    return response.data.data;
+  } catch (error: unknown) {
+    const axiosError = error as AxiosError<{ message: string }>;
+    throw new Error(
+      axiosError.response?.data?.message ||
+        axiosError.message ||
+        "Failed to fetch ticket."
     );
   }
 };
