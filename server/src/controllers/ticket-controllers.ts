@@ -119,3 +119,64 @@ export const myTickets = asyncHandler(async (req: Request, res: Response) => {
   });
 });
 
+
+// @desc    Get a single ticket by ID (only accessible to its creator)
+// @route   GET /api/v1/tickets/:ticketId
+// @access  Protected (Client)
+// @returns Ticket details including status, category, and assigned/verified info
+export const getTicketById = asyncHandler(
+  async (req: Request, res: Response) => {
+    const user = req.user as IUser;
+    const { ticketId } = req.params;
+
+    // Validate MongoDB ObjectId format
+    if (!ticketId.match(/^[0-9a-fA-F]{24}$/)) {
+      res.status(400);
+      throw new Error("Invalid ticket ID.");
+    }
+
+    // Fetch ticket and populate related fields
+    const ticket = await Ticket.findById(ticketId)
+      .populate("status_id", "name")
+      .populate("category_id", "name")
+      .populate("assigned_to", "name email")
+      .populate("assigned_by", "name email")
+      .populate("verified_by", "name email")
+      .lean();
+
+    if (!ticket) {
+      res.status(404);
+      throw new Error("Ticket not found.");
+    }
+
+    // Allow access only if the ticket was created by the logged-in client
+    if (ticket.created_by.toString() !== user._id.toString()) {
+      res.status(403);
+      throw new Error("Access denied. You do not own this ticket.");
+    }
+
+    // Rename populated fields for frontend clarity
+    const {
+      status_id,
+      category_id,
+      assigned_to,
+      assigned_by,
+      verified_by,
+      ...rest
+    } = ticket;
+
+    res.status(200).json({
+      success: true,
+      data: {
+        ...rest,
+        status: status_id,
+        category: category_id,
+        assigned_to,
+        assigned_by,
+        verified_by,
+      },
+    });
+  }
+);
+
+
