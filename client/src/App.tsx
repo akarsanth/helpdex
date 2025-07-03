@@ -13,9 +13,9 @@ import { fetchCurrentUser } from "./redux/store/auth/auth-actions";
 import Message from "./components/Message";
 import type { AppDispatch, RootState } from "./redux/store";
 import ThemeSwitch from "./components/ThemeSwitch";
+import { CircularProgress } from "@mui/material";
 
 // Extending theme
-
 declare module "@mui/material/styles" {
   interface Theme {
     custom: {
@@ -89,7 +89,7 @@ const darkTheme = createTheme({
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();
-  const { user } = useSelector((state: RootState) => state.auth);
+  const { user, isLoggedIn } = useSelector((state: RootState) => state.auth);
   const { type, message } = useSelector((state: RootState) => state.message);
 
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -101,6 +101,22 @@ function App() {
       dispatch(fetchCurrentUser());
     }
   }, [dispatch, user]);
+
+  // Until logged in state in determined
+  if (isLoggedIn === undefined) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh", // full screen
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
