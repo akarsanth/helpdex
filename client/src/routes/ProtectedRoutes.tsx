@@ -8,11 +8,14 @@ interface ProtectedRoutesProps {
   allowedRoles?: string[]; // Optional: if not passed, allow any logged-in user
 }
 
+// Component
 const ProtectedRoutes = ({ children, allowedRoles }: ProtectedRoutesProps) => {
   const dispatch = useDispatch<AppDispatch>();
   const location = useLocation();
   const { isLoggedIn, user } = useSelector((state: RootState) => state.auth);
 
+  // checking the logged in state
+  // the logged in state is already verfied here
   if (!isLoggedIn) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }

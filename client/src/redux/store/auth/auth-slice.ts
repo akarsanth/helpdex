@@ -17,7 +17,7 @@ interface User {
 
 interface AuthState {
   isLoading: boolean;
-  isLoggedIn: boolean;
+  isLoggedIn: boolean | undefined;
   user: User | null;
   accessToken: string | null;
   error: string | null;
@@ -27,7 +27,7 @@ interface AuthState {
 
 const initialState: AuthState = {
   isLoading: false,
-  isLoggedIn: false,
+  isLoggedIn: undefined,
   user: null,
   accessToken: null,
   error: null,
