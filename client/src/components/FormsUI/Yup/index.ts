@@ -1,5 +1,8 @@
 import * as Yup from "yup";
 
+// Email Regex
+export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
 // ---------------------------
 // Register Initial Values
 // ---------------------------
@@ -21,7 +24,8 @@ export const REGISTER_FORM_VALIDATION = Yup.object().shape({
     .max(100, "Must be less than 100 characters"),
   email: Yup.string()
     .required("Email is required")
-    .matches(/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/, "Invalid email address"),
+    .matches(EMAIL_REGEX, "Invalid email address")
+    .max(255, "Must be less than 255 characters"),
   password: Yup.string()
     .required("Password is required")
     .min(8, "Password must be at least 8 characters")
@@ -44,7 +48,8 @@ export const INITIAL_LOGIN_FORM_STATE = {
 export const LOGIN_FORM_VALIDATION = Yup.object().shape({
   email: Yup.string()
     .required("Email is required")
-    .matches(/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/, "Invalid email address"),
+    .matches(EMAIL_REGEX, "Invalid email address")
+    .max(255, "Must be less than 255 characters"),
   password: Yup.string().required("Password is required"),
 });
 
@@ -58,7 +63,8 @@ export const INITIAL_FORGOT_PASS_STATE = {
 export const FORGOT_PASS_FORM_VALIDATION = Yup.object().shape({
   email: Yup.string()
     .required("Email is a required field")
-    .email("Invalid email address"),
+    .matches(EMAIL_REGEX, "Invalid email address")
+    .max(255, "Must be less than 255 characters"),
 });
 
 // ---------------------------
