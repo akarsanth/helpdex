@@ -21,8 +21,7 @@ export const REGISTER_FORM_VALIDATION = Yup.object().shape({
     .max(100, "Must be less than 100 characters"),
   email: Yup.string()
     .required("Email is required")
-    .email("Invalid email address")
-    .max(255, "Must be less than 255 characters"),
+    .matches(/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/, "Invalid email address"),
   password: Yup.string()
     .required("Password is required")
     .min(8, "Password must be at least 8 characters")
@@ -45,7 +44,7 @@ export const INITIAL_LOGIN_FORM_STATE = {
 export const LOGIN_FORM_VALIDATION = Yup.object().shape({
   email: Yup.string()
     .required("Email is required")
-    .email("Invalid email address"),
+    .matches(/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/, "Invalid email address"),
   password: Yup.string().required("Password is required"),
 });
 
