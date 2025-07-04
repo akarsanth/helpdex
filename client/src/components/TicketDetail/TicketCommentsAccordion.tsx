@@ -18,8 +18,11 @@ import { Formik, Form as FormikForm, useField } from "formik";
 import * as Yup from "yup";
 import { addComment } from "../../services/comment-service";
 import type { Comment } from "../../types/comment";
-import { useSelector } from "react-redux";
-import type { RootState } from "../../redux/store";
+
+// Redux
+import { useSelector, useDispatch } from "react-redux";
+import type { AppDispatch, RootState } from "../../redux/store";
+import { setMessage } from "../../redux/store/message/message-slice";
 
 // Custom Formik field for MUI TextField
 const FormikTextField = ({ name, label }: { name: string; label: string }) => {
@@ -59,6 +62,7 @@ const roleColorMap: Record<
 };
 
 const TicketCommentsAccordion = ({ ticketId, initialComments }: Props) => {
+  const appDispatch = useDispatch<AppDispatch>();
   const [comments, setComments] = useState<Comment[]>(initialComments);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -88,6 +92,7 @@ const TicketCommentsAccordion = ({ ticketId, initialComments }: Props) => {
         is_internal: role !== "client" && values.is_internal,
       });
       setComments((prev) => [...prev, created]);
+      appDispatch(setMessage({ type: "info", message: "Comment added" }));
       resetForm();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to submit comment");
@@ -122,8 +127,6 @@ const TicketCommentsAccordion = ({ ticketId, initialComments }: Props) => {
       </AccordionSummary>
 
       <AccordionDetails sx={{ borderTop: 1, borderColor: "grey.100", py: 3 }}>
-        {error && <Alert severity="error">{error}</Alert>}
-
         {/* Formik Comment Form */}
         <Box mb={3}>
           <Formik
@@ -165,14 +168,16 @@ const TicketCommentsAccordion = ({ ticketId, initialComments }: Props) => {
           </Formik>
         </Box>
 
-        <Divider sx={{ mb: 2 }} />
+        {error && <Alert severity="error">{error}</Alert>}
+
+        <Divider sx={{ my: 2 }} />
 
         {/* Comments List */}
         {comments.length === 0 ? (
           <Typography>No comments yet.</Typography>
         ) : (
           comments.map((c) => (
-            <Box key={c._id} mb={2}>
+            <Box key={c._id} mb={2.5}>
               <Box display="flex" alignItems="center" flexWrap="wrap" gap={1.5}>
                 <Box
                   display="flex"
