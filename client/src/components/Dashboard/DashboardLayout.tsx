@@ -49,6 +49,7 @@ const roleLinks: Record<
   { label: string; path: string; icon: React.ReactNode }[]
 > = {
   client: [
+    { label: "Home", path: "/dashboard", icon: <InboxIcon /> },
     { label: "My Tickets", path: "/dashboard/my-tickets", icon: <InboxIcon /> },
     {
       label: "Create Ticket",
@@ -58,6 +59,7 @@ const roleLinks: Record<
     { label: "Profile", path: "/dashboard/profile", icon: <InboxIcon /> },
   ],
   developer: [
+    { label: "Home", path: "/dashboard", icon: <InboxIcon /> },
     {
       label: "Assigned Tickets",
       path: "/dashboard/assigned",
@@ -67,13 +69,14 @@ const roleLinks: Record<
     { label: "Profile", path: "/dashboard/profile", icon: <InboxIcon /> },
   ],
   qa: [
+    { label: "Home", path: "/dashboard", icon: <InboxIcon /> },
     {
       label: "All Tickets",
       path: "/dashboard/all-tickets",
       icon: <InboxIcon />,
     },
     { label: "Categories", path: "/dashboard/categories", icon: <MailIcon /> },
-    { label: "Statuses", path: "/dashboard/statuses", icon: <InboxIcon /> },
+    { label: "Profile", path: "/dashboard/profile", icon: <InboxIcon /> },
   ],
   admin: [
     { label: "Users", path: "/dashboard/users", icon: <InboxIcon /> },
@@ -105,7 +108,7 @@ export default function DashboardLayout(props: Props) {
   const role = user?.role || "";
   const links = roleLinks[role] || [];
 
-  // To fetch category and status
+  // To fetch category
   useEffect(() => {
     if (accessToken) {
       dispatch(fetchMeta());

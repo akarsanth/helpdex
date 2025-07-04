@@ -1,16 +1,35 @@
+import type { StatusName } from "../utils/status-transition";
+import type { Category } from "./category";
+import type { User } from "./user";
+import type { Comment } from "./comment"; // ✅ Import Comment type
+
+export type TicketPriority = "low" | "medium" | "high" | "urgent";
+
+/**
+ * Ticket type with populated references (used for display)
+ */
 export interface Ticket {
   _id: string;
   title: string;
   description: string;
-  priority: "low" | "medium" | "high" | "urgent";
-  status_id: string;
-  category_id: string;
-  created_by: string;
-  assigned_by?: string;
-  assigned_to?: string;
-  verified_by?: string;
+  priority: TicketPriority;
+
+  status: StatusName;
+  category: Category;
+  created_by: User;
+
+  assigned_by?: User;
+  assigned_to?: User;
+  closed_by?: User;
+
   assigned_at?: string;
+  resolved_at?: string;
+  closed_at?: string;
+  reopened_at?: string;
   deadline?: string;
+
   createdAt: string;
   updatedAt: string;
+
+  comments: Comment[];
 }

@@ -7,22 +7,14 @@ interface Category {
   name: string;
 }
 
-interface Status {
-  _id: string;
-  name: string;
-  description?: string;
-}
-
 interface MetaState {
   categories: Category[];
-  statuses: Status[];
   loading: boolean;
   error: string | null;
 }
 
 const initialState: MetaState = {
   categories: [],
-  statuses: [],
   loading: false,
   error: null,
 };
@@ -31,11 +23,9 @@ export const fetchMeta = createAsyncThunk(
   "meta/fetchMeta",
   async (_, thunkAPI) => {
     try {
-      // Get token from auth slice
       const state = thunkAPI.getState() as { auth: { accessToken: string } };
       const token = state.auth.accessToken;
 
-      // Config with Authorization header
       const config = {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -43,21 +33,17 @@ export const fetchMeta = createAsyncThunk(
         withCredentials: true,
       };
 
-      // Parallel requests with token
-      const [categoryRes, statusRes] = await Promise.all([
-        axios.get("/api/v1/categories", config),
-        axios.get("/api/v1/statuses", config),
-      ]);
+      // Only fetch categories now
+      const categoryRes = await axios.get("/api/v1/categories", config);
 
       return {
         categories: categoryRes.data,
-        statuses: statusRes.data,
       };
     } catch (error: unknown) {
       const message =
         axios.isAxiosError(error) && error.response?.data?.error
           ? error.response.data.error
-          : "Failed to fetch meta information";
+          : "Failed to fetch categories";
       return thunkAPI.rejectWithValue(message);
     }
   }
@@ -76,7 +62,6 @@ const metaSlice = createSlice({
       .addCase(fetchMeta.fulfilled, (state, action) => {
         state.loading = false;
         state.categories = action.payload.categories;
-        state.statuses = action.payload.statuses;
       })
       .addCase(fetchMeta.rejected, (state, action) => {
         state.loading = false;
