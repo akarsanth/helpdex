@@ -28,7 +28,6 @@ export const createTicket = asyncHandler(
       description,
       priority,
       category_id,
-      status_id: openStatus._id,
       created_by: (req.user as IUser)._id,
     });
 
@@ -51,7 +50,6 @@ export const createTicket = asyncHandler(
 // @access  Protected (Client)
 export const myTickets = asyncHandler(async (req: Request, res: Response) => {
   const user = req.user as IUser;
-  const userId = user._id;
 
   const { status, fromDate, toDate, page = "1", limit = "10" } = req.query;
 
@@ -60,32 +58,25 @@ export const myTickets = asyncHandler(async (req: Request, res: Response) => {
   const skip = (pageNum - 1) * limitNum;
 
   const filter: Record<string, any> = {
-    created_by: userId,
+    created_by: user._id,
   };
 
-  // Filter by status if provided
+  // Filter by status (since it's a string now)
   if (status && typeof status === "string") {
-    filter.status_id = status;
+    filter.status = status;
   }
 
-  // Validate and apply date filters
+  // Optional date filter
   const createdAtFilter: Record<string, Date> = {};
-
   if (fromDate && typeof fromDate === "string") {
     const from = new Date(fromDate);
-    if (!isNaN(from.getTime())) {
-      createdAtFilter.$gte = from;
-    }
+    if (!isNaN(from.getTime())) createdAtFilter.$gte = from;
   }
-
   if (toDate && typeof toDate === "string") {
     const to = new Date(toDate);
-    if (!isNaN(to.getTime())) {
-      createdAtFilter.$lte = to;
-    }
+    if (!isNaN(to.getTime())) createdAtFilter.$lte = to;
   }
-
-  if (Object.keys(createdAtFilter).length > 0) {
+  if (Object.keys(createdAtFilter).length) {
     filter.createdAt = createdAtFilter;
   }
 
@@ -94,14 +85,12 @@ export const myTickets = asyncHandler(async (req: Request, res: Response) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limitNum)
-      .populate("status_id", "name")
       .populate("category_id", "name")
       .lean()
       .then((docs) =>
-        docs.map(({ category_id, status_id, ...rest }) => ({
+        docs.map(({ category_id, ...rest }) => ({
           ...rest,
           category: category_id,
-          status: status_id,
         }))
       ),
     Ticket.countDocuments(filter),
@@ -119,25 +108,20 @@ export const myTickets = asyncHandler(async (req: Request, res: Response) => {
   });
 });
 
-
-// @desc    Get a single ticket by ID (only accessible to its creator)
+// @desc    Get a single ticket by ID
 // @route   GET /api/v1/tickets/:ticketId
-// @access  Protected (Client)
-// @returns Ticket details including status, category, and assigned/verified info
+// @access  Protected (creator, assigned developer, or any QA)
 export const getTicketById = asyncHandler(
   async (req: Request, res: Response) => {
     const user = req.user as IUser;
     const { ticketId } = req.params;
 
-    // Validate MongoDB ObjectId format
     if (!ticketId.match(/^[0-9a-fA-F]{24}$/)) {
       res.status(400);
       throw new Error("Invalid ticket ID.");
     }
 
-    // Fetch ticket and populate related fields
     const ticket = await Ticket.findById(ticketId)
-      .populate("status_id", "name")
       .populate("category_id", "name")
       .populate("created_by", "name email")
       .populate("assigned_to", "name email")
@@ -150,27 +134,26 @@ export const getTicketById = asyncHandler(
       throw new Error("Ticket not found.");
     }
 
-    // Allow access only if the ticket was created by the logged-in client
-    if (ticket.created_by._id.toString() !== user._id.toString()) {
+    const userId = user._id.toString();
+
+    const isCreator = ticket.created_by._id.toString() === userId;
+    const isAssignedDev = ticket.assigned_to?._id?.toString() === userId;
+    const isQA = user.role === "qa";
+
+    if (!isCreator && !isAssignedDev && !isQA) {
       res.status(403);
-      throw new Error("Access denied. You do not own this ticket.");
+      throw new Error(
+        "Access denied. You are not authorized to view this ticket."
+      );
     }
 
-    // Rename populated fields for frontend clarity
-    const {
-      status_id,
-      category_id,
-      assigned_to,
-      assigned_by,
-      verified_by,
-      ...rest
-    } = ticket;
+    const { category_id, assigned_to, assigned_by, verified_by, ...rest } =
+      ticket;
 
     res.status(200).json({
       success: true,
       data: {
         ...rest,
-        status: status_id,
         category: category_id,
         assigned_to,
         assigned_by,
@@ -179,5 +162,3 @@ export const getTicketById = asyncHandler(
     });
   }
 );
-
-
