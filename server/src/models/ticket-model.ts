@@ -58,6 +58,7 @@ const ticketSchema = new Schema<ITicket>(
       type: String,
       required: true,
       enum: allowedStatuses,
+      default: "Open",
     },
     category_id: {
       type: Schema.Types.ObjectId,
