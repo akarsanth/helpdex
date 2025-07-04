@@ -450,3 +450,17 @@ export const logout = asyncHandler(async (req: Request, res: Response) => {
 
   res.status(200).json({ msg: "Logged out successfully" });
 });
+
+// @desc    Get all users with the role of "developer"
+// @route   GET /api/v1/users/developers
+// @access  Protected (QA, Admin)
+// Only return id, name, email
+export const getDevelopers = asyncHandler(
+  async (req: Request, res: Response) => {
+    const developers = await User.find({ role: "developer" })
+      .select("_id name email")
+      .lean();
+
+    res.status(200).json({ success: true, developers });
+  }
+);

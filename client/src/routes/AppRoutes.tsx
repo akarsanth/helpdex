@@ -38,11 +38,18 @@ const dashboardRoutes = [
   {
     path: "my-tickets/:ticketId",
     element: <TicketDetail />,
-    roles: ["client"],
+    roles: ["client", "developer", "qa"],
   },
   { path: "assigned", element: <AssignedTickets />, roles: ["developer"] },
+  {
+    path: "assigned/:ticketId",
+    element: <TicketDetail />,
+    roles: ["developer"],
+  },
+
   { path: "progress", element: <Progress />, roles: ["developer"] },
   { path: "all-tickets", element: <AllTickets />, roles: ["qa"] },
+  { path: "all-tickets/:ticketId", element: <TicketDetail />, roles: ["qa"] },
   { path: "categories", element: <Categories />, roles: ["qa"] },
   { path: "statuses", element: <Statuses />, roles: ["qa"] },
   { path: "users", element: <Users />, roles: ["admin"] },

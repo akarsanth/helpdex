@@ -20,11 +20,10 @@ export interface ITicket extends Document {
   created_by: Types.ObjectId;
   assigned_by?: Types.ObjectId;
   assigned_to?: Types.ObjectId;
-  verified_by?: Types.ObjectId;
+  closed_by?: Types.ObjectId;
 
   assigned_at?: Date;
   resolved_at?: Date;
-  verified_at?: Date;
   closed_at?: Date;
   reopened_at?: Date;
   deadline?: Date;
@@ -72,11 +71,10 @@ const ticketSchema = new Schema<ITicket>(
     },
     assigned_by: { type: Schema.Types.ObjectId, ref: "User" },
     assigned_to: { type: Schema.Types.ObjectId, ref: "User" },
-    verified_by: { type: Schema.Types.ObjectId, ref: "User" },
+    closed_by: { type: Schema.Types.ObjectId, ref: "User" },
 
     assigned_at: { type: Date },
     resolved_at: { type: Date },
-    verified_at: { type: Date },
     closed_at: { type: Date },
     reopened_at: { type: Date },
     deadline: { type: Date },
