@@ -1,14 +1,10 @@
-import type { User, UserId } from "./user";
+import type { User } from "./user";
 
 export interface Comment {
   _id: string;
-  content: string;
-  createdBy: User;
   ticket_id: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CommentLean extends Omit<Comment, "createdBy"> {
-  createdBy: UserId;
+  user_id: User;
+  comment: string;
+  is_internal: boolean;
+  created_at: string;
 }
