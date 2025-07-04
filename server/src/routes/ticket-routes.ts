@@ -11,6 +11,11 @@ const router = express.Router();
 
 router.post("/", protect, authorizeRoles("client"), createTicket);
 router.get("/my", protect, authorizeRoles("client"), myTickets);
-router.get("/:ticketId", protect, authorizeRoles("client"), getTicketById);
+router.get(
+  "/:ticketId",
+  protect,
+  authorizeRoles("client", "developer", "qa"),
+  getTicketById
+);
 
 export default router;
