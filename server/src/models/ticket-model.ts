@@ -2,11 +2,20 @@ import mongoose, { Schema, Document, Types } from "mongoose";
 
 export type TicketPriority = "low" | "medium" | "high" | "urgent";
 
+export type StatusName =
+  | "Open"
+  | "Acknowledged"
+  | "Assigned"
+  | "In Progress"
+  | "Resolved"
+  | "Closed"
+  | "Reopened";
+
 export interface ITicket extends Document {
   title: string;
   description: string;
   priority: TicketPriority;
-  status_id: Types.ObjectId;
+  status: StatusName; // String-based status
   category_id: Types.ObjectId;
   created_by: Types.ObjectId;
   assigned_by?: Types.ObjectId;
@@ -26,6 +35,16 @@ export interface ITicket extends Document {
 
 const allowedPriorities: TicketPriority[] = ["low", "medium", "high", "urgent"];
 
+const allowedStatuses: StatusName[] = [
+  "Open",
+  "Acknowledged",
+  "Assigned",
+  "In Progress",
+  "Resolved",
+  "Closed",
+  "Reopened",
+];
+
 const ticketSchema = new Schema<ITicket>(
   {
     title: { type: String, required: true },
@@ -35,10 +54,10 @@ const ticketSchema = new Schema<ITicket>(
       required: true,
       enum: allowedPriorities,
     },
-    status_id: {
-      type: Schema.Types.ObjectId,
-      ref: "Status",
+    status: {
+      type: String,
       required: true,
+      enum: allowedStatuses,
     },
     category_id: {
       type: Schema.Types.ObjectId,
@@ -59,7 +78,6 @@ const ticketSchema = new Schema<ITicket>(
     verified_at: { type: Date },
     closed_at: { type: Date },
     reopened_at: { type: Date },
-
     deadline: { type: Date },
   },
   { timestamps: true }
