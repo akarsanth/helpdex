@@ -1,34 +1,38 @@
-import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+import type { RootState } from "../redux/store";
+import { useNavigate, useParams } from "react-router-dom";
 import type { Ticket } from "../types";
-
-// MUI Components
-import Typography from "@mui/material/Typography";
-import Box from "@mui/material/Box";
-import CircularProgress from "@mui/material/CircularProgress";
-import Alert from "@mui/material/Alert";
-
-// Service
-import { getTicketById } from "../services/ticket-service";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { Alert, Box, Button, CircularProgress } from "@mui/material";
+import TicketHeaderSection from "../components/TicketDetail/TicketHeaderSection";
+import TicketAccordionWrapper from "../components/TicketDetail/TicketAccordionWrapper";
+import TicketCommentsAccordion from "../components/TicketDetail/TicketCommentsAccordion";
+import TicketInfoAccordion from "../components/TicketDetail/TicketInfoAccordion";
+import TicketEditAccordion from "../components/TicketDetail/TicketEditAccordion";
+import {
+  getTicketById,
+  updateTicketStatus,
+  assignDeveloper,
+} from "../services/ticket-service";
+import type { StatusName } from "../utils/status-transition";
 
 const TicketDetail = () => {
-  const { ticketId } = useParams();
+  const { ticketId } = useParams<{ ticketId: string }>();
+  const navigate = useNavigate();
+  const currentUser = useSelector((state: RootState) => state.auth.user);
+  const role = currentUser?.role;
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch ticket by ID
   useEffect(() => {
     const fetch = async () => {
       try {
         const data = await getTicketById(ticketId!);
         setTicket(data);
       } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError("Something went wrong!");
-        }
+        setError(err instanceof Error ? err.message : "Something went wrong!");
       } finally {
         setLoading(false);
       }
@@ -36,70 +40,66 @@ const TicketDetail = () => {
     fetch();
   }, [ticketId]);
 
+  const handleStatusOrAssignment = async (
+    action: "status" | "assign",
+    payload: StatusName | { developerId: string }
+  ) => {
+    try {
+      const updated =
+        action === "status"
+          ? await updateTicketStatus(ticketId!, payload as StatusName)
+          : await assignDeveloper(
+              ticketId!,
+              (payload as { developerId: string }).developerId
+            );
+
+      setTicket(updated);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update ticket.");
+    }
+  };
+
   if (loading) return <CircularProgress sx={{ mt: 4 }} />;
   if (error) return <Alert severity="error">{error}</Alert>;
   if (!ticket) return <Alert severity="error">Ticket not found.</Alert>;
 
+  // For go back button
+  const getBackRoute = () => {
+    switch (role) {
+      case "qa":
+        return "/dashboard/tickets";
+      case "developer":
+        return "/dashboard/assigned-tickets";
+      case "client":
+      default:
+        return "/dashboard/my-tickets";
+    }
+  };
+
   return (
-    <Box sx={{ maxWidth: 700, mx: "auto", mt: 4, px: 2 }}>
-      <Typography variant="h5" gutterBottom>
-        Ticket Details
-      </Typography>
+    <Box sx={{ mx: "auto", mt: 4, px: 2 }}>
+      <Button
+        startIcon={<ArrowBackIcon />}
+        onClick={() => navigate(getBackRoute())}
+        variant="outlined"
+        sx={{ mb: 2 }}
+      >
+        View All Tickets
+      </Button>
 
-      <Typography>
-        <strong>Title:</strong> {ticket.title}
-      </Typography>
-      <Typography>
-        <strong>Description:</strong> {ticket.description || "-"}
-      </Typography>
-      <Typography>
-        <strong>Priority:</strong> {ticket.priority}
-      </Typography>
-      <Typography>
-        <strong>Status:</strong> {ticket.status.name}
-      </Typography>
-      <Typography>
-        <strong>Category:</strong> {ticket.category.name}
-      </Typography>
-      <Typography>
-        <strong>Created By:</strong> {ticket.created_by.name}
-      </Typography>
-      <Typography>
-        <strong>Created At:</strong>{" "}
-        {new Date(ticket.createdAt).toLocaleString()}
-      </Typography>
+      <TicketHeaderSection
+        ticket={ticket}
+        onStatusOrAssignment={handleStatusOrAssignment}
+      />
 
-      {ticket.assigned_to && (
-        <Typography>
-          <strong>Assigned To:</strong> {ticket.assigned_to.name}
-        </Typography>
-      )}
-
-      {ticket.assigned_by && (
-        <Typography>
-          <strong>Assigned By:</strong> {ticket.assigned_by.name}
-        </Typography>
-      )}
-
-      {ticket.verified_by && (
-        <Typography>
-          <strong>Verified By:</strong> {ticket.verified_by.name}
-        </Typography>
-      )}
-
-      {ticket.assigned_at && (
-        <Typography>
-          <strong>Assigned At:</strong>{" "}
-          {new Date(ticket.assigned_at).toLocaleString()}
-        </Typography>
-      )}
-
-      {ticket.deadline && (
-        <Typography>
-          <strong>Deadline:</strong>{" "}
-          {new Date(ticket.deadline).toLocaleString()}
-        </Typography>
-      )}
+      <TicketAccordionWrapper>
+        <TicketInfoAccordion ticket={ticket} />
+        <TicketEditAccordion ticket={ticket} />
+        <TicketCommentsAccordion
+          ticketId={ticket._id}
+          initialComments={ticket.comments}
+        />
+      </TicketAccordionWrapper>
     </Box>
   );
 };
