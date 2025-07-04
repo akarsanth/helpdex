@@ -3,6 +3,8 @@ import {
   createTicket,
   myTickets,
   getTicketById,
+  updateTicketStatus,
+  assignDeveloper,
 } from "../controllers/ticket-controllers";
 import { protect } from "../middlewares/auth";
 import { authorizeRoles } from "../middlewares/authorize";
@@ -16,6 +18,22 @@ router.get(
   protect,
   authorizeRoles("client", "developer", "qa"),
   getTicketById
+);
+
+// New route for status update
+router.patch(
+  "/:ticketId/status",
+  protect,
+  authorizeRoles("developer", "qa"),
+  updateTicketStatus
+);
+
+// Only QA can assign developers
+router.patch(
+  "/:ticketId/assign",
+  protect,
+  authorizeRoles("qa"),
+  assignDeveloper
 );
 
 export default router;

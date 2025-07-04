@@ -10,6 +10,7 @@ import {
   resetPassword,
   resendResetOtp,
   logout,
+  getDevelopers,
 } from "../controllers/user-controllers";
 import { protect } from "../middlewares/auth";
 import { authorizeRoles } from "../middlewares/authorize";
@@ -27,5 +28,13 @@ router.get("/logout", logout);
 
 // Admin
 router.post("/:id/approve", protect, authorizeRoles("admin"), approveUser);
+
+// Get developers
+router.get(
+  "/developers",
+  protect,
+  authorizeRoles("qa", "admin"), // optional: restrict access
+  getDevelopers
+);
 
 export default router;
