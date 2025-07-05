@@ -34,10 +34,10 @@ export const fetchMeta = createAsyncThunk(
       };
 
       // Only fetch categories now
-      const categoryRes = await axios.get("/api/v1/categories", config);
+      const res = await axios.get("/api/v1/categories", config);
 
       return {
-        categories: categoryRes.data,
+        categories: res.data.categories,
       };
     } catch (error: unknown) {
       const message =
