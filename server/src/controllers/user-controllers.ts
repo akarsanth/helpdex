@@ -1,16 +1,18 @@
-import asyncHandler from "express-async-handler";
-import User from "../models/user-model";
-import jwt from "jsonwebtoken";
-import bcrypt from "bcryptjs";
 import { Request, Response } from "express";
-import sendEmail from "../utils/send-email";
+import asyncHandler from "express-async-handler";
+import { IncomingForm } from "formidable";
+import User from "../models/user-model";
+import { uploadFileToCloudinary } from "../utils/cloudinary-upload";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import config from "../config";
+import { generateOtp } from "../utils/generate-otp";
+import sendEmail from "../utils/send-email";
 import {
   createAccessToken,
   createActivationToken,
   createRefreshToken,
 } from "../utils/token";
-import { generateOtp } from "../utils/generate-otp";
 
 // Define expected request body for user registration
 interface RegisterRequestBody {
@@ -464,3 +466,42 @@ export const getDevelopers = asyncHandler(
     res.status(200).json({ success: true, developers });
   }
 );
+
+// @desc    Upload user profile avatar
+// @route   POST /api/v1/users/upload-avatar
+// @access  Private (authenticated users)
+export const uploadAvatar = async (req: Request, res: Response) => {
+  const form = new IncomingForm({ multiples: false });
+
+  form.parse(req, async (err, fields, files) => {
+    if (err || !files.file) {
+      return res.status(400).json({ error: "Avatar upload failed" });
+    }
+
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ error: "Unauthorized. User not found." });
+    }
+
+    const uploaded = files.file;
+    const file = Array.isArray(uploaded) ? uploaded[0] : uploaded;
+
+    try {
+      const result = await uploadFileToCloudinary(file, "helpdex/avatars");
+
+      const user = await User.findByIdAndUpdate(
+        req.user._id,
+        { avatar: result.secure_url },
+        { new: true }
+      ).select("-password");
+
+      res.status(200).json({
+        message: "Avatar uploaded successfully",
+        avatar: result.secure_url,
+        user,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Failed to upload avatar" });
+    }
+  });
+};

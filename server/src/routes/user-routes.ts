@@ -11,6 +11,7 @@ import {
   resendResetOtp,
   logout,
   getDevelopers,
+  uploadAvatar,
 } from "../controllers/user-controllers";
 import { protect } from "../middlewares/auth";
 import { authorizeRoles } from "../middlewares/authorize";
@@ -36,5 +37,8 @@ router.get(
   authorizeRoles("qa", "admin"), // optional: restrict access
   getDevelopers
 );
+
+// Upload
+router.post("/upload-avatar", protect, uploadAvatar);
 
 export default router;
