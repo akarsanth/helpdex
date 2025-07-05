@@ -11,7 +11,7 @@ export interface IAttachment extends Document {
 }
 
 const attachmentSchema = new Schema<IAttachment>({
-  ticket_id: { type: Schema.Types.ObjectId, ref: "Ticket", required: false }, // now optional
+  ticket_id: { type: Schema.Types.ObjectId, ref: "Ticket", required: false },
   filename: { type: String, required: true },
   original_name: { type: String, required: true },
   path: { type: String, required: true },
