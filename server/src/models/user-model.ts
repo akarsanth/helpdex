@@ -12,6 +12,7 @@ export interface IUser extends Document {
   email: string;
   password: string;
   role: UserRole;
+  avatar?: string;
   isEmailVerified: boolean;
   emailVerifiedAt?: Date;
   isApprovedByAdmin: boolean;
@@ -19,10 +20,7 @@ export interface IUser extends Document {
   resetOtp?: string;
   resetOtpExpiresAt?: Date;
 
-  // Method to compare passwords
   matchPassword(enteredPassword: string): Promise<boolean>;
-
-  // Method to remove sensitive fields from the response
   toJSON(): Record<string, any>;
 }
 
@@ -38,13 +36,15 @@ const userSchema = new Schema<IUser>(
       lowercase: true,
       trim: true,
     },
-    password: { type: String }, // Password is stored hashed, validation handled elsewhere
+    password: { type: String },
 
     role: {
       type: String,
       enum: ["client", "qa", "admin", "developer"],
       default: "client",
     },
+
+    avatar: { type: String, default: "" },
 
     isEmailVerified: { type: Boolean, default: false },
     emailVerifiedAt: Date,
@@ -55,7 +55,7 @@ const userSchema = new Schema<IUser>(
     resetOtp: String,
     resetOtpExpiresAt: Date,
   },
-  { timestamps: true } // Adds createdAt and updatedAt automatically
+  { timestamps: true }
 );
 
 // Method to compare hashed password with entered password
