@@ -12,6 +12,7 @@ import {
   logout,
   getDevelopers,
   uploadAvatar,
+  updateBasicProfile,
 } from "../controllers/user-controllers";
 import { protect } from "../middlewares/auth";
 import { authorizeRoles } from "../middlewares/authorize";
@@ -40,5 +41,7 @@ router.get(
 
 // Upload
 router.post("/upload-avatar", protect, uploadAvatar);
+
+router.put("/update-basic", protect, updateBasicProfile);
 
 export default router;
