@@ -127,14 +127,36 @@ export const TICKET_FORM_VALIDATION = Yup.object().shape({
 export const INITIAL_PROFILE_FORM_STATE = {
   name: "",
   companyName: "",
-  email: "",
 };
 
 export const PROFILE_FORM_VALIDATION = Yup.object().shape({
   name: Yup.string().required("Full name is required").max(100),
   companyName: Yup.string().required("Company name is required").max(100),
-  email: Yup.string()
-    .required("Email is required")
-    .email("Invalid email")
-    .max(255),
+});
+
+// ---------------------------
+// Update Password Initial Values
+// ---------------------------
+export const INITIAL_UPDATE_PASSWORD_FORM_STATE = {
+  currentPassword: "",
+  newPassword: "",
+  confirmPassword: "",
+};
+
+export const UPDATE_PASSWORD_VALIDATION = Yup.object().shape({
+  currentPassword: Yup.string()
+    .required("Current password is required")
+    .min(8, "Password must be at least 8 characters")
+    .matches(/[a-zA-Z]/, "Password must contain Latin letters")
+    .max(255, "Must be less than 255 characters"),
+
+  newPassword: Yup.string()
+    .required("New password is required")
+    .min(8, "Password must be at least 8 characters")
+    .matches(/[a-zA-Z]/, "Password must contain Latin letters")
+    .max(255, "Must be less than 255 characters"),
+
+  confirmPassword: Yup.string()
+    .required("Confirm password is required")
+    .oneOf([Yup.ref("newPassword")], "Passwords must match"),
 });
