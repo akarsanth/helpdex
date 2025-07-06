@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
 import { IncomingForm } from "formidable";
 import User from "../models/user-model";
+import type { IUser } from "../models/user-model";
 import { uploadFileToCloudinary } from "../utils/cloudinary-upload";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -505,3 +506,38 @@ export const uploadAvatar = async (req: Request, res: Response) => {
     }
   });
 };
+
+// @desc    Update basic profile (name, companyName)
+// @route   PUT /api/v1/users/update-basic
+// @access  Private (Logged-in users only)
+export const updateBasicProfile = asyncHandler(
+  async (req: Request, res: Response) => {
+    const user = req.user as IUser;
+    const { name, companyName } = req.body;
+
+    if (!name?.trim() || !companyName?.trim()) {
+      res.status(400);
+      throw new Error("Name and company name are required.");
+    }
+
+    const updated = await User.findByIdAndUpdate(
+      user._id,
+      {
+        name: name.trim(),
+        companyName: companyName.trim(),
+      },
+      { new: true }
+    ).select("-password");
+
+    if (!updated) {
+      res.status(500);
+      throw new Error("Failed to update profile.");
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully.",
+      user: updated,
+    });
+  }
+);
