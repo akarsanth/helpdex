@@ -9,6 +9,7 @@ interface User {
   companyName: string;
   email: string;
   role: UserRole;
+  avatar?: string;
   isEmailVerified: boolean;
   emailVerifiedAt?: string;
   isApprovedByAdmin: boolean;
