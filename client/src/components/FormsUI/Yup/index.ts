@@ -120,3 +120,21 @@ export const TICKET_FORM_VALIDATION = Yup.object().shape({
 
   attachments: Yup.array().of(Yup.string()).nullable(),
 });
+
+// ---------------------------
+// Profile Detail Initial Values
+// ---------------------------
+export const INITIAL_PROFILE_FORM_STATE = {
+  name: "",
+  companyName: "",
+  email: "",
+};
+
+export const PROFILE_FORM_VALIDATION = Yup.object().shape({
+  name: Yup.string().required("Full name is required").max(100),
+  companyName: Yup.string().required("Company name is required").max(100),
+  email: Yup.string()
+    .required("Email is required")
+    .email("Invalid email")
+    .max(255),
+});
