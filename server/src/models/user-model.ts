@@ -4,6 +4,12 @@ import bcrypt from "bcryptjs";
 // Define allowed roles for the user
 export type UserRole = "client" | "qa" | "admin" | "developer";
 
+// Avatar subfield type
+interface AvatarInfo {
+  url: string;
+  public_id: string;
+}
+
 // Interface describing the User document structure
 export interface IUser extends Document {
   _id: Types.ObjectId;
@@ -12,7 +18,7 @@ export interface IUser extends Document {
   email: string;
   password: string;
   role: UserRole;
-  avatar?: string;
+  avatar?: AvatarInfo;
   isEmailVerified: boolean;
   emailVerifiedAt?: Date;
   isApprovedByAdmin: boolean;
@@ -44,7 +50,10 @@ const userSchema = new Schema<IUser>(
       default: "client",
     },
 
-    avatar: { type: String, default: "" },
+    avatar: {
+      url: { type: String, default: "" },
+      public_id: { type: String, default: "" },
+    },
 
     isEmailVerified: { type: Boolean, default: false },
     emailVerifiedAt: Date,
