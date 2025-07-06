@@ -1,25 +1,23 @@
-import { UploadApiResponse } from "cloudinary";
 import streamifier from "streamifier";
-import { cloudinary } from "./cloudinary";
-import type { File } from "formidable";
 import fs from "fs/promises";
+import { cloudinary } from "./cloudinary";
+import type { UploadApiResponse } from "cloudinary";
+import type { File } from "formidable";
 
 /**
- * Convert Formidable file to Buffer
+ * Converts a Formidable file to a Buffer
  */
-const fileToBuffer = async (file: File): Promise<Buffer> => {
+export const fileToBuffer = async (file: File): Promise<Buffer> => {
   return fs.readFile(file.filepath);
 };
 
 /**
- * Upload file to Cloudinary (used for both attachments and avatars)
+ * Uploads a buffer to Cloudinary under a specified folder
  */
-export const uploadFileToCloudinary = async (
-  file: File,
+export const uploadBufferToCloudinary = (
+  buffer: Buffer,
   folder: string
 ): Promise<UploadApiResponse> => {
-  const buffer = await fileToBuffer(file);
-
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
@@ -30,12 +28,29 @@ export const uploadFileToCloudinary = async (
         if (error || !result) {
           return reject(
             error ||
-              new Error("Cloudinary upload failed with no specific error.")
+              new Error(
+                "Cloudinary upload failed with no specific error provided."
+              )
           );
         }
         resolve(result);
       }
     );
+
     streamifier.createReadStream(buffer).pipe(stream);
   });
+};
+
+/**
+ * Deletes a file from Cloudinary using its public ID.
+ *
+ * @param public_id - The unique identifier of the file on Cloudinary
+ * @returns A Promise that resolves when the deletion is complete
+ */
+export const deleteFromCloudinary = async (public_id: string) => {
+  try {
+    await cloudinary.uploader.destroy(public_id);
+  } catch (error) {
+    console.error("Failed to delete file from Cloudinary:", error);
+  }
 };

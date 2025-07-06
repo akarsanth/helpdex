@@ -3,7 +3,12 @@ import asyncHandler from "express-async-handler";
 import { IncomingForm } from "formidable";
 import User from "../models/user-model";
 import type { IUser } from "../models/user-model";
-import { uploadFileToCloudinary } from "../utils/cloudinary-upload";
+import {
+  uploadBufferToCloudinary,
+  deleteFromCloudinary,
+  fileToBuffer,
+} from "../utils/cloudinary-upload";
+import type { File } from "formidable";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import config from "../config";
@@ -468,9 +473,9 @@ export const getDevelopers = asyncHandler(
   }
 );
 
-// @desc    Upload user profile avatar
+// @desc    Upload user avatar
 // @route   POST /api/v1/users/upload-avatar
-// @access  Private (authenticated users)
+// @access  Protected
 export const uploadAvatar = async (req: Request, res: Response) => {
   const form = new IncomingForm({ multiples: false });
 
@@ -487,21 +492,42 @@ export const uploadAvatar = async (req: Request, res: Response) => {
     const file = Array.isArray(uploaded) ? uploaded[0] : uploaded;
 
     try {
-      const result = await uploadFileToCloudinary(file, "helpdex/avatars");
+      const buffer = await fileToBuffer(file as File);
+
+      const currentUser = await User.findById(req.user._id);
+      if (!currentUser) {
+        return res.status(404).json({ error: "User not found." });
+      }
+
+      // Delete previous avatar from Cloudinary if public_id exists
+      if (currentUser.avatar?.public_id) {
+        await deleteFromCloudinary(currentUser.avatar.public_id);
+      }
+
+      // Upload new avatar
+      const result = await uploadBufferToCloudinary(buffer, "helpdex/avatars");
 
       const user = await User.findByIdAndUpdate(
         req.user._id,
-        { avatar: result.secure_url },
+        {
+          avatar: {
+            url: result.secure_url,
+            public_id: result.public_id,
+          },
+        },
         { new: true }
       ).select("-password");
 
       res.status(200).json({
         message: "Avatar uploaded successfully",
-        avatar: result.secure_url,
+        avatar: {
+          url: result.secure_url,
+          public_id: result.public_id,
+        },
         user,
       });
     } catch (error) {
-      console.error(error);
+      console.error("Avatar upload error:", error);
       res.status(500).json({ error: "Failed to upload avatar" });
     }
   });
