@@ -6,10 +6,24 @@ export interface User {
   companyName: string;
   email: string;
   role: UserRole;
+
   isEmailVerified: boolean;
-  isApprovedByAdmin: boolean;
   emailVerifiedAt?: string;
+
+  isApprovedByAdmin: boolean;
   adminApprovedAt?: string;
+
+  avatar?: {
+    url: string;
+    public_id: string;
+  };
+
+  pendingEmail?: string;
+  resetOtp?: string;
+  resetOtpExpiresAt?: string;
+
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export type UserId = string;
