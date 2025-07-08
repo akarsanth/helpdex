@@ -115,48 +115,59 @@ export const register = asyncHandler(
   }
 );
 
-// @desc    Verify user's email using activation token
+// @desc    Verify user's email or new email (update flow)
 // @route   POST /api/v1/users/verify-email
 // @access  Public
 export const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
-  try {
-    const { activationToken } = req.body;
+  const { activationToken } = req.body;
 
-    // Check if token is provided and is valid string
-    if (!activationToken || typeof activationToken !== "string") {
-      res.status(400);
-      throw new Error("Activation token is missing or invalid!");
-    }
+  if (!activationToken || typeof activationToken !== "string") {
+    res.status(400);
+    throw new Error("Activation token is missing or invalid!");
+  }
 
-    // Decode and verify token
-    const decoded = jwt.verify(
-      activationToken,
-      process.env.ACTIVATION_TOKEN_SECRET as string
-    ) as { _id: string; email: string };
+  const decoded = jwt.verify(
+    activationToken,
+    process.env.ACTIVATION_TOKEN_SECRET as string
+  ) as { _id: string; email: string };
 
-    // Find user by email
-    const user = await User.findOne({ email: decoded.email });
-    if (!user) {
-      res.status(400);
-      throw new Error("User not found!");
-    }
+  const user = await User.findById(decoded._id);
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found");
+  }
 
-    // Check if already verified
+  if (user.email === decoded.email) {
+    // Initial verification flow
     if (user.isEmailVerified) {
-      res.status(400).json({ message: "Email already verified!" });
-      return;
+      res.status(400);
+      throw new Error(`Email '${user.email}' is already verified.`);
     }
 
-    // Update user verification status
     user.isEmailVerified = true;
     user.emailVerifiedAt = new Date();
-    await user.save();
+  } else if (user.pendingEmail === decoded.email) {
+    // Email update flow
+    const emailExists = await User.findOne({ email: user.pendingEmail });
+    if (emailExists) {
+      res.status(409);
+      throw new Error(`Email '${user.pendingEmail}' is already taken.`);
+    }
 
-    res.json({ message: "Email verified successfully" });
-  } catch (error: any) {
+    user.email = user.pendingEmail;
+    user.pendingEmail = undefined;
+    user.isEmailVerified = true;
+    user.emailVerifiedAt = new Date();
+  } else {
     res.status(400);
-    throw new Error(error.message || "Invalid or expired activation token.");
+    throw new Error("Token does not match any valid current/pending email.");
   }
+
+  await user.save();
+
+  res
+    .status(200)
+    .json({ message: `Email '${user.email}' verified successfully.` });
 });
 
 // @desc    Login User
@@ -302,36 +313,50 @@ export const resendVerification = asyncHandler(
   async (req: Request, res: Response) => {
     const { email } = req.body;
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({
+      $or: [{ email }, { pendingEmail: email }],
+    });
 
     if (!user) {
       res.status(404);
       throw new Error("User not found.");
     }
 
-    if (user.isEmailVerified) {
+    // Determine target: unverified primary email OR pending email
+    let targetEmail = "";
+    if (!user.isEmailVerified && user.email === email) {
+      targetEmail = user.email;
+    } else if (user.isEmailVerified && user.pendingEmail === email) {
+      if (!user.pendingEmail) {
+        res.status(400);
+        throw new Error("Pending email is missing.");
+      }
+      targetEmail = user.pendingEmail;
+    } else {
       res.status(400);
-      throw new Error("Email is already verified.");
+      throw new Error("Email is already verified or invalid for verification.");
     }
 
     const activationToken = createActivationToken({
       _id: user._id.toString(),
-      email: user.email,
+      email: targetEmail,
     });
 
     const activationUrl = `${config.domain}/activate?token=${activationToken}`;
 
     await sendEmail({
-      to: email,
+      to: targetEmail,
       subject: "Resend: Verify your HelpDex account",
       heading: "Email Verification Needed",
       message:
-        "Click the button below to verify your account and start using HelpDex.",
+        "Click the button below to verify your email and continue using HelpDex.",
       buttonText: "Verify Account",
       buttonUrl: activationUrl,
     });
 
-    res.status(200).json({ message: "Verification email has been resent." });
+    res.status(200).json({
+      message: `Verification email has been resent to ${targetEmail}.`,
+    });
   }
 );
 
@@ -546,7 +571,7 @@ export const updateBasicProfile = asyncHandler(
       throw new Error("Name and company name are required.");
     }
 
-    const updated = await User.findByIdAndUpdate(
+    const updatedUser = await User.findByIdAndUpdate(
       user._id,
       {
         name: name.trim(),
@@ -555,7 +580,7 @@ export const updateBasicProfile = asyncHandler(
       { new: true }
     ).select("-password");
 
-    if (!updated) {
+    if (!updatedUser) {
       res.status(500);
       throw new Error("Failed to update profile.");
     }
@@ -563,7 +588,154 @@ export const updateBasicProfile = asyncHandler(
     res.status(200).json({
       success: true,
       message: "Profile updated successfully.",
-      user: updated,
+      user: updatedUser,
     });
+  }
+);
+
+// @desc    Update user password
+// @route   PUT /api/v1/users/update-password
+// @access  Private (authenticated)
+export const updatePassword = asyncHandler(
+  async (req: Request, res: Response) => {
+    const currentPassword = req.body.currentPassword?.trim();
+    const newPassword = req.body.newPassword?.trim();
+
+    if (!currentPassword || !newPassword) {
+      res.status(400);
+      throw new Error("Both current and new passwords are required.");
+    }
+
+    if (!req.user || !req.user._id) {
+      res.status(401);
+      throw new Error("Unauthorized.");
+    }
+
+    const user = await User.findById(req.user._id).select("+password");
+    if (!user) {
+      res.status(404);
+      throw new Error("User not found.");
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      res.status(400);
+      throw new Error("Current password is incorrect.");
+    }
+
+    if (currentPassword === newPassword) {
+      res.status(400);
+      throw new Error(
+        "New password must be different from the current password."
+      );
+    }
+
+    user.password = await bcrypt.hash(newPassword, 12);
+    await user.save();
+
+    res.status(200).json({ message: "Password updated successfully." });
+  }
+);
+
+// @desc    Update user email (pending verification)
+// @route   PUT /api/v1/users/update-email
+// @access  Private (authenticated)
+export const updateEmail = asyncHandler(async (req: Request, res: Response) => {
+  const { newEmail, currentPassword } = req.body;
+
+  if (!newEmail || typeof newEmail !== "string") {
+    res.status(400);
+    throw new Error("New email is required.");
+  }
+
+  if (!currentPassword || typeof currentPassword !== "string") {
+    res.status(400);
+    throw new Error("Current password is required.");
+  }
+
+  if (!req.user || !req.user._id) {
+    res.status(401);
+    throw new Error("Unauthorized.");
+  }
+
+  const normalizedNewEmail = newEmail.toLowerCase().trim();
+
+  // Check if the new email is already in use by another account or pending verification
+  const emailInUse = await User.findOne({
+    $or: [{ email: normalizedNewEmail }, { pendingEmail: normalizedNewEmail }],
+  });
+
+  if (emailInUse) {
+    res.status(409);
+    throw new Error(
+      "Email is already in use or pending verification for email change."
+    );
+  }
+
+  const user = await User.findById(req.user._id).select("+password");
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found.");
+  }
+
+  const isMatch = await user.matchPassword(currentPassword);
+  if (!isMatch) {
+    res.status(401);
+    throw new Error("Current password is incorrect.");
+  }
+
+  // Save new email temporarily in `pendingEmail`
+  user.pendingEmail = normalizedNewEmail;
+  await user.save();
+
+  const activationToken = createActivationToken({
+    _id: user._id.toString(),
+    email: user.pendingEmail,
+  });
+
+  const activationUrl = `${config.domain}/activate?token=${activationToken}`;
+
+  await sendEmail({
+    to: user.pendingEmail,
+    subject: "Confirm your new email for HelpDex",
+    heading: "Verify Your New Email",
+    message:
+      "You requested to change your email. Please verify your new email address by clicking the button below.",
+    buttonText: "Verify New Email",
+    buttonUrl: activationUrl,
+  });
+
+  res.status(200).json({
+    message: `Verification link has been sent to ${user.pendingEmail}. Please verify to complete the email update.`,
+  });
+});
+
+// @desc    Cancel pending email change
+// @route   PUT /api/v1/users/cancel-pending-email
+// @access  Private
+export const cancelPendingEmail = asyncHandler(
+  async (req: Request, res: Response) => {
+    if (!req.user || !req.user._id) {
+      res.status(401);
+      throw new Error("Unauthorized.");
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      res.status(404);
+      throw new Error("User not found.");
+    }
+
+    if (!user.pendingEmail) {
+      res.status(400);
+      throw new Error("No pending email to cancel.");
+    }
+
+    user.pendingEmail = undefined;
+    await user.save();
+
+    res
+      .status(200)
+      .json({ message: "Pending email change has been cancelled." });
   }
 );
