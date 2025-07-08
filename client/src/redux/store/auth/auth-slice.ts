@@ -8,8 +8,12 @@ interface User {
   name: string;
   companyName: string;
   email: string;
+  pendingEmail?: string;
   role: UserRole;
-  avatar?: string;
+  avatar?: {
+    url: string;
+    public_id: string;
+  };
   isEmailVerified: boolean;
   emailVerifiedAt?: string;
   isApprovedByAdmin: boolean;
