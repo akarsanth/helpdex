@@ -11,6 +11,11 @@ import {
   resendResetOtp,
   logout,
   getDevelopers,
+  uploadAvatar,
+  updateBasicProfile,
+  updatePassword,
+  updateEmail,
+  cancelPendingEmail,
 } from "../controllers/user-controllers";
 import { protect } from "../middlewares/auth";
 import { authorizeRoles } from "../middlewares/authorize";
@@ -37,4 +42,14 @@ router.get(
   getDevelopers
 );
 
+// Upload
+router.post("/upload-avatar", protect, uploadAvatar);
+// Update basic info
+router.put("/update-basic", protect, updateBasicProfile);
+// Update Password
+router.put("/update-password", protect, updatePassword);
+// Update email
+router.put("/update-email", protect, updateEmail);
+// cancel email update
+router.put("/cancel-pending-email", protect, cancelPendingEmail);
 export default router;

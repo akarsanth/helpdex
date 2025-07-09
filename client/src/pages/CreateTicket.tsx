@@ -114,7 +114,7 @@ const CreateTicket = () => {
   };
 
   return (
-    <Box sx={{ maxWidth: 600, mx: "auto", mt: 4, px: 2 }}>
+    <Box sx={{ maxWidth: 786, mx: "auto", mt: 4, px: 2 }}>
       <Typography variant="h6" sx={{ mb: 4, textAlign: "center" }}>
         Create Support Ticket
       </Typography>

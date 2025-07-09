@@ -4,14 +4,22 @@ import bcrypt from "bcryptjs";
 // Define allowed roles for the user
 export type UserRole = "client" | "qa" | "admin" | "developer";
 
+// Avatar subfield type
+interface AvatarInfo {
+  url: string;
+  public_id: string;
+}
+
 // Interface describing the User document structure
 export interface IUser extends Document {
   _id: Types.ObjectId;
   name: string;
   companyName: string;
   email: string;
+  pendingEmail?: string;
   password: string;
   role: UserRole;
+  avatar?: AvatarInfo;
   isEmailVerified: boolean;
   emailVerifiedAt?: Date;
   isApprovedByAdmin: boolean;
@@ -19,10 +27,7 @@ export interface IUser extends Document {
   resetOtp?: string;
   resetOtpExpiresAt?: Date;
 
-  // Method to compare passwords
   matchPassword(enteredPassword: string): Promise<boolean>;
-
-  // Method to remove sensitive fields from the response
   toJSON(): Record<string, any>;
 }
 
@@ -31,6 +36,7 @@ const userSchema = new Schema<IUser>(
   {
     name: { type: String, required: true, trim: true },
     companyName: { type: String, required: true, trim: true },
+
     email: {
       type: String,
       required: true,
@@ -38,12 +44,24 @@ const userSchema = new Schema<IUser>(
       lowercase: true,
       trim: true,
     },
-    password: { type: String }, // Password is stored hashed, validation handled elsewhere
+
+    pendingEmail: {
+      type: String,
+      lowercase: true,
+      trim: true,
+    },
+
+    password: { type: String },
 
     role: {
       type: String,
       enum: ["client", "qa", "admin", "developer"],
       default: "client",
+    },
+
+    avatar: {
+      url: { type: String, default: "" },
+      public_id: { type: String, default: "" },
     },
 
     isEmailVerified: { type: Boolean, default: false },
@@ -55,7 +73,7 @@ const userSchema = new Schema<IUser>(
     resetOtp: String,
     resetOtpExpiresAt: Date,
   },
-  { timestamps: true } // Adds createdAt and updatedAt automatically
+  { timestamps: true }
 );
 
 // Method to compare hashed password with entered password

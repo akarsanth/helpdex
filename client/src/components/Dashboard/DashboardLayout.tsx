@@ -213,7 +213,7 @@ export default function DashboardLayout(props: Props) {
           {/* Avatar icon with dropdown menu */}
           <Tooltip title="Account">
             <IconButton onClick={handleAvatarClick} sx={{ p: 0 }}>
-              <Avatar>{getInitials()}</Avatar>
+              <Avatar src={user?.avatar?.url}>{getInitials()}</Avatar>
             </IconButton>
           </Tooltip>
 

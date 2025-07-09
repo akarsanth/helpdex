@@ -120,3 +120,80 @@ export const TICKET_FORM_VALIDATION = Yup.object().shape({
 
   attachments: Yup.array().of(Yup.string()).nullable(),
 });
+
+// ---------------------------
+// Profile Detail Initial Values
+// ---------------------------
+export const INITIAL_PROFILE_FORM_STATE = {
+  name: "",
+  companyName: "",
+};
+
+export const PROFILE_FORM_VALIDATION = Yup.object().shape({
+  name: Yup.string().required("Full name is required").max(100),
+  companyName: Yup.string().required("Company name is required").max(100),
+});
+
+// ---------------------------
+// Update Password Initial Values
+// ---------------------------
+export const INITIAL_UPDATE_PASSWORD_FORM_STATE = {
+  currentPassword: "",
+  newPassword: "",
+  confirmPassword: "",
+};
+
+export const UPDATE_PASSWORD_VALIDATION = Yup.object().shape({
+  currentPassword: Yup.string()
+    .required("Current password is required")
+    .min(8, "Password must be at least 8 characters")
+    .matches(/[a-zA-Z]/, "Password must contain Latin letters")
+    .max(255, "Must be less than 255 characters"),
+
+  newPassword: Yup.string()
+    .required("New password is required")
+    .min(8, "Password must be at least 8 characters")
+    .matches(/[a-zA-Z]/, "Password must contain Latin letters")
+    .max(255, "Must be less than 255 characters"),
+
+  confirmPassword: Yup.string()
+    .required("Confirm password is required")
+    .oneOf([Yup.ref("newPassword")], "Passwords must match"),
+});
+
+// PASSWORD CHANGE INITIAL STATE AND VALIDATION
+// Initial form state
+export const INITIAL_PASSWORD_CHANGE_STATE = {
+  currentPassword: "",
+  newPassword: "",
+  confirmNewPassword: "",
+};
+
+// Yup validation schema
+export const PASSWORD_CHANGE_FORM_VALIDATION = Yup.object().shape({
+  currentPassword: Yup.string().required("Current password is required"),
+
+  newPassword: Yup.string()
+    .required("New password is required")
+    .min(8, "New password must be at least 8 characters")
+    .matches(/[a-zA-Z]/, "New password must contain Latin letters")
+    .notOneOf(
+      [Yup.ref("currentPassword"), null],
+      "New password must be different from the current password"
+    ),
+
+  confirmNewPassword: Yup.string()
+    .required("Please confirm your new password")
+    .oneOf([Yup.ref("newPassword")], "Passwords do not match"),
+});
+
+// Email Update
+export const INITIAL_EMAIL_UPDATE_STATE = {
+  newEmail: "",
+  currentPassword: "",
+};
+
+export const EMAIL_UPDATE_VALIDATION = Yup.object().shape({
+  newEmail: emailValidationSchema,
+  currentPassword: Yup.string().required("Password is required"),
+});

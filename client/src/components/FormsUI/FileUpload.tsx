@@ -1,5 +1,4 @@
 import { useState } from "react";
-import axios from "axios";
 import {
   Box,
   Button,
@@ -11,6 +10,8 @@ import {
 } from "@mui/material";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
+import axiosInstance from "../../utils/axios";
+import type { AxiosError } from "axios";
 
 interface FileUploadProps {
   onUploadSuccess: (id: string) => void;
@@ -20,11 +21,11 @@ interface FileUploadProps {
 }
 
 interface UploadedFileMeta {
+  _id: string;
   name: string;
   url: string;
 }
 
-// Component
 const FileUpload = ({
   onUploadSuccess,
   onUploadError,
@@ -44,40 +45,51 @@ const FileUpload = ({
 
     setUploading(true);
 
-    for (const file of Array.from(files)) {
+    const uploadTasks = Array.from(files).map(async (file) => {
       const formData = new FormData();
       formData.append("file", file);
 
       try {
-        const response = await axios.post(
-          "/api/v1/attachments/upload",
-          formData,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-            onUploadProgress: (event) => {
-              const percent = Math.round(
-                (event.loaded * 100) / (event.total || 1)
-              );
-              setUploadProgress((prev) => ({ ...prev, [file.name]: percent }));
-            },
-          }
-        );
-
-        const id = response.data._id;
-        const url = response.data.path; // Cloudinary secure URL
-        const name = response.data.original_name;
-        console.log(url);
-        onUploadSuccess(id);
-        setUploadedFiles((prev) => [...prev, { name, url }]);
-      } catch (error) {
-        const message =
-          axios.isAxiosError(error) && error.response?.data?.error
-            ? error.response.data.error
-            : `Upload failed: ${file.name}`;
-        onUploadError(message);
+        try {
+          const { data } = await axiosInstance.post(
+            "/api/v1/attachments/upload",
+            formData,
+            {
+              headers: { "Content-Type": "multipart/form-data" },
+              onUploadProgress: (event) => {
+                const percent = Math.round(
+                  (event.loaded * 100) / (event.total || 1)
+                );
+                setUploadProgress((prev) => ({
+                  ...prev,
+                  [file.name]: percent,
+                }));
+              },
+            }
+          );
+          const { _id, path, original_name } = data.attachment;
+          onUploadSuccess(_id);
+          setUploadedFiles((prev) => [
+            ...prev,
+            { _id, name: original_name, url: path },
+          ]);
+        } catch (error) {
+          const axiosError = error as AxiosError<{ message?: string }>;
+          const message =
+            axiosError.response?.data?.message ||
+            axiosError.message ||
+            `Upload failed: ${file.name}`;
+          onUploadError(message);
+        }
+      } finally {
+        setUploadProgress((prev) => {
+          const { [file.name]: _, ...rest } = prev;
+          return rest;
+        });
       }
-    }
+    });
 
+    await Promise.allSettled(uploadTasks);
     setUploading(false);
   };
 
@@ -107,18 +119,17 @@ const FileUpload = ({
       )}
 
       {uploadedFiles.length > 0 && (
-        <Box sx={{ mt: 2 }}>
-          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+        <Box sx={{ mt: 4 }}>
+          <Typography variant="body1" sx={{ mb: 0.5, fontWeight: 700 }}>
             Uploaded Files
           </Typography>
           <List dense>
             {uploadedFiles.map((file) => (
               <ListItem
-                key={file.name}
+                key={file._id}
                 sx={{ display: "flex", alignItems: "center" }}
               >
                 <InsertDriveFileIcon fontSize="small" sx={{ mr: 1 }} />
-
                 <Link
                   href={file.url}
                   target="_blank"
