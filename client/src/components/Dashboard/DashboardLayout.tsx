@@ -65,7 +65,7 @@ const roleLinks: Record<
       path: "/dashboard/assigned",
       icon: <InboxIcon />,
     },
-    { label: "Progress", path: "/dashboard/progress", icon: <MailIcon /> },
+    { label: "Profile", path: "/dashboard/profile", icon: <InboxIcon /> },
   ],
   qa: [
     { label: "Home", path: "/dashboard", icon: <InboxIcon /> },
