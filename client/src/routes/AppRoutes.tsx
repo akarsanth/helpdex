@@ -12,15 +12,12 @@ import Unauthorized from "../pages/Unauthorized";
 
 // Dashboard Pages
 import CreateTicket from "../pages/CreateTicket";
-import MyTickets from "../pages/MyTickets";
-import AssignedTickets from "../pages/AssignedTickets";
-import Progress from "../pages/Progress";
-import AllTickets from "../pages/AllTickets";
 import Categories from "../pages/Categories";
 import Statuses from "../pages/Statuses";
 import Users from "../pages/Users";
 import Profile from "../pages/Profile";
 import TicketDetail from "../pages/TicketDetail";
+import Tickets from "../pages/Tickets";
 
 // Layout
 import DashboardLayout from "../components/Dashboard/DashboardLayout";
@@ -34,21 +31,20 @@ const dashboardRoutes = [
     roles: ["client", "developer", "qa", "admin"],
   },
   { path: "create-ticket", element: <CreateTicket />, roles: ["client"] },
-  { path: "my-tickets", element: <MyTickets />, roles: ["client"] },
+  { path: "my-tickets", element: <Tickets />, roles: ["client"] },
   {
     path: "my-tickets/:ticketId",
     element: <TicketDetail />,
     roles: ["client", "developer", "qa"],
   },
-  { path: "assigned", element: <AssignedTickets />, roles: ["developer"] },
+  { path: "assigned", element: <Tickets />, roles: ["developer"] },
   {
     path: "assigned/:ticketId",
     element: <TicketDetail />,
     roles: ["developer"],
   },
 
-  { path: "progress", element: <Progress />, roles: ["developer"] },
-  { path: "all-tickets", element: <AllTickets />, roles: ["qa"] },
+  { path: "all-tickets", element: <Tickets />, roles: ["qa"] },
   { path: "all-tickets/:ticketId", element: <TicketDetail />, roles: ["qa"] },
   { path: "categories", element: <Categories />, roles: ["qa"] },
   { path: "statuses", element: <Statuses />, roles: ["qa"] },
