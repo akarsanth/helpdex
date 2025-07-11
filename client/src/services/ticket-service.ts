@@ -2,6 +2,7 @@ import type { Ticket } from "../types/ticket";
 import axiosInstance from "../utils/axios";
 import { AxiosError } from "axios";
 import type { StatusName } from "../utils/status-transition";
+import type { MRT_ColumnFiltersState } from "material-react-table";
 
 // Form values from Formik
 export interface TicketFormValues {
@@ -119,6 +120,75 @@ export const assignDeveloper = async (
       axiosError.response?.data?.message ||
         axiosError.message ||
         "Assignment failed"
+    );
+  }
+};
+
+// Fetch ticket
+interface FetchTicketsOptions {
+  pageIndex: number;
+  pageSize: number;
+  search: string;
+  filters: MRT_ColumnFiltersState;
+}
+
+interface FetchTicketsResponse {
+  tickets: Ticket[];
+  total: number;
+}
+
+export const fetchTickets = async (
+  options?: FetchTicketsOptions
+): Promise<FetchTicketsResponse> => {
+  try {
+    console.log(options?.filters);
+    const response = await axiosInstance.get<FetchTicketsResponse>(
+      "/api/v1/tickets",
+      {
+        params: {
+          page: (options?.pageIndex ?? 0) + 1,
+          pageSize: options?.pageSize ?? 10,
+          search: options?.search ?? "",
+          filters: JSON.stringify(options?.filters),
+        },
+      }
+    );
+    return response.data;
+  } catch (error: unknown) {
+    const axiosError = error as AxiosError<{ message: string }>;
+    throw new Error(
+      axiosError.response?.data?.message ||
+        axiosError.message ||
+        "Failed to fetch tickets."
+    );
+  }
+};
+
+// ticket update
+interface UpdateTicketPayload {
+  title?: string;
+  description?: string;
+  priority?: string;
+  category_id?: string;
+  deadline?: string;
+}
+
+export const updateTicketDetails = async (
+  ticketId: string,
+  data: UpdateTicketPayload
+): Promise<Ticket> => {
+  try {
+    const response = await axiosInstance.patch<{ ticket: Ticket }>(
+      `/api/v1/tickets/${ticketId}`,
+      data
+    );
+    return response.data.ticket;
+  } catch (error: unknown) {
+    const axiosError = error as AxiosError<{ message: string }>;
+    throw new Error(
+      axiosError.response?.data?.message ||
+        axiosError.message ||
+        "Failed to update ticket."
     );
   }
 };

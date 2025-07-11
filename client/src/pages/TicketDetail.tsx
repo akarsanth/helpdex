@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import type { RootState } from "../redux/store";
 import { useNavigate, useParams } from "react-router-dom";
@@ -26,19 +26,20 @@ const TicketDetail = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetch = async () => {
-      try {
-        const data = await getTicketById(ticketId!);
-        setTicket(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Something went wrong!");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetch();
+  const fetchTicket = useCallback(async () => {
+    try {
+      const data = await getTicketById(ticketId!);
+      setTicket(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong!");
+    } finally {
+      setLoading(false);
+    }
   }, [ticketId]);
+
+  useEffect(() => {
+    fetchTicket();
+  }, [fetchTicket]);
 
   const handleStatusOrAssignment = async (
     action: "status" | "assign",
@@ -67,9 +68,9 @@ const TicketDetail = () => {
   const getBackRoute = () => {
     switch (role) {
       case "qa":
-        return "/dashboard/tickets";
+        return "/dashboard/all-tickets";
       case "developer":
-        return "/dashboard/assigned-tickets";
+        return "/dashboard/assigned";
       case "client":
       default:
         return "/dashboard/my-tickets";
@@ -94,7 +95,7 @@ const TicketDetail = () => {
 
       <TicketAccordionWrapper>
         <TicketInfoAccordion ticket={ticket} />
-        <TicketEditAccordion ticket={ticket} />
+        <TicketEditAccordion ticket={ticket} onUpdate={fetchTicket} />
         <TicketCommentsAccordion
           ticketId={ticket._id}
           initialComments={ticket.comments}

@@ -322,3 +322,109 @@ export const assignDeveloper = asyncHandler(
     });
   }
 );
+
+// @desc    Get paginated ticket list with optional search
+// @route   GET /api/v1/tickets
+// @access  Private
+export const getTickets = asyncHandler(async (req: Request, res: Response) => {
+  const user = req.user as IUser;
+  const page = Number(req.query.page) || 1;
+  const pageSize = Number(req.query.pageSize) || 10;
+  const search = req.query.search?.toString() || "";
+
+  const query: any = {};
+
+  // Role-based ticket access
+  if (user.role === "client") {
+    query.created_by = user._id;
+  } else if (user.role === "developer") {
+    query.assigned_to = user._id;
+  }
+
+  // Global search
+  if (search) {
+    query.$or = [
+      { title: { $regex: search, $options: "i" } },
+      { description: { $regex: search, $options: "i" } },
+    ];
+  }
+
+  // Handle column filters
+  const filters = JSON.parse((req.query.filters as string) || "[]");
+  console.log(filters);
+
+  for (const filter of filters) {
+    console.log(filter);
+    const { id, value } = filter;
+    if (!value) continue;
+
+    if (id === "status") query.status = value;
+    if (id === "priority") query.priority = value;
+    if (id === "category_id") query.category_id = value;
+  }
+
+  const total = await Ticket.countDocuments(query);
+
+  const ticketsRaw = await Ticket.find(query)
+    .populate("category_id", "name")
+    .populate("created_by", "name email")
+    .populate("assigned_to", "name email")
+    .sort({ createdAt: -1 })
+    .skip((page - 1) * pageSize)
+    .limit(pageSize);
+
+  const tickets = ticketsRaw.map((ticket) => {
+    const t = ticket.toObject();
+    return {
+      ...t,
+      category: t.category_id,
+      category_id: undefined,
+    };
+  });
+
+  res.status(200).json({ tickets, total });
+});
+
+// @desc    Update ticket fields
+// @route   PUT /api/v1/tickets/:id
+// @access  Private
+export const updateTicketDetails = asyncHandler(
+  async (req: Request, res: Response) => {
+    const user = req.user as IUser;
+    const { ticketId } = req.params;
+    const updateData = req.body;
+
+    const ticket = await Ticket.findById(ticketId);
+    if (!ticket) {
+      res.status(404);
+      throw new Error("Ticket not found");
+    }
+
+    // Check edit permissions based on role
+    const editableFieldsByRole: Record<string, string[]> = {
+      client: ["title", "description", "priority"],
+      qa: ["priority", "category_id", "deadline"],
+      developer: ["description"],
+    };
+
+    const allowedFields = editableFieldsByRole[user.role] || [];
+
+    // Prevent editing if ticket is in a locked status
+    const nonEditableStatuses = ["Resolved", "Closed"];
+    if (nonEditableStatuses.includes(ticket.status)) {
+      res.status(400);
+      throw new Error(`Cannot edit ticket in '${ticket.status}' status.`);
+    }
+
+    // Update only allowed fields
+    for (const field of allowedFields) {
+      if (updateData[field] !== undefined) {
+        ticket.set(field, updateData[field]);
+      }
+    }
+
+    await ticket.save();
+
+    res.status(200).json({ success: true, message: "Ticket updated", ticket });
+  }
+);
