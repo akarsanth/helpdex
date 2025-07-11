@@ -5,6 +5,8 @@ import {
   getTicketById,
   updateTicketStatus,
   assignDeveloper,
+  getTickets,
+  updateTicketDetails,
 } from "../controllers/ticket-controllers";
 import { protect } from "../middlewares/auth";
 import { authorizeRoles } from "../middlewares/authorize";
@@ -13,6 +15,15 @@ const router = express.Router();
 
 router.post("/", protect, authorizeRoles("client"), createTicket);
 router.get("/my", protect, authorizeRoles("client"), myTickets);
+
+// generic list route
+router.get(
+  "/",
+  protect,
+  authorizeRoles("client", "developer", "qa"),
+  getTickets
+);
+
 router.get(
   "/:ticketId",
   protect,
@@ -34,6 +45,14 @@ router.patch(
   protect,
   authorizeRoles("qa"),
   assignDeveloper
+);
+
+// Route to update ticket fields (title, desc, priority, category, deadline)
+router.patch(
+  "/:ticketId",
+  protect,
+  authorizeRoles("client", "qa", "developer"),
+  updateTicketDetails
 );
 
 export default router;
