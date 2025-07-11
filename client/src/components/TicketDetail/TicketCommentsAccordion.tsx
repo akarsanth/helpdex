@@ -5,7 +5,6 @@ import {
   Typography,
   Box,
   TextField,
-  Button,
   FormControlLabel,
   Checkbox,
   Alert,
@@ -13,11 +12,14 @@ import {
   Chip,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
+
 import { useState } from "react";
 import { Formik, Form as FormikForm, useField } from "formik";
 import * as Yup from "yup";
 import { addComment } from "../../services/comment-service";
 import type { Comment } from "../../types/comment";
+import Button from "../FormsUI/Button";
 
 // Redux
 import { useSelector, useDispatch } from "react-redux";
@@ -156,8 +158,11 @@ const TicketCommentsAccordion = ({ ticketId, initialComments }: Props) => {
                   <Box>
                     <Button
                       type="submit"
-                      variant="contained"
+                      color="secondary"
                       disabled={submitting}
+                      endIcon={<KeyboardArrowRightIcon />}
+                      disableElevation
+                      sx={{ alignSelf: "flex-start" }}
                     >
                       {submitting ? "Posting..." : "Post Comment"}
                     </Button>
