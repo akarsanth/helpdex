@@ -1,5 +1,4 @@
 import { Box, Typography } from "@mui/material";
-
 import BasicProfileForm from "../components/Profile/BasicProfileForm";
 import AvatarSection from "../components/Profile/AvatarSection";
 import PasswordUpdateForm from "../components/Profile/PasswordUpdate";
