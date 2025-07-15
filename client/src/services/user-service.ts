@@ -122,6 +122,7 @@ export const cancelPendingEmail = async () => {
 interface FetchUsersOptions {
   pageIndex: number;
   pageSize: number;
+  search: string;
   filters: MRT_ColumnFiltersState;
 }
 
@@ -140,6 +141,7 @@ export const fetchUsers = async (
         params: {
           page: (options?.pageIndex ?? 0) + 1,
           pageSize: options?.pageSize ?? 10,
+          search: options?.search ?? "",
           filters: JSON.stringify(options?.filters ?? []),
         },
       }

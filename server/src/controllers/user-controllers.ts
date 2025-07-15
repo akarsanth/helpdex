@@ -752,8 +752,18 @@ export const getAllUsers = asyncHandler(async (req: Request, res: Response) => {
   const page = parseInt(req.query.page as string) || 1;
   const pageSize = parseInt(req.query.pageSize as string) || 10;
   const filters = JSON.parse((req.query.filters as string) || "[]");
+  const search = req.query.search?.toString() || "";
 
   const query: Record<string, any> = {};
+
+  // Global search
+  if (search) {
+    query.$or = [
+      { name: { $regex: search, $options: "i" } },
+      { companyName: { $regex: search, $options: "i" } },
+      { email: { $regex: search, $options: "i" } },
+    ];
+  }
 
   for (const filter of filters) {
     const { id, value } = filter;

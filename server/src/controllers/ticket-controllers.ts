@@ -351,7 +351,6 @@ export const getTickets = asyncHandler(async (req: Request, res: Response) => {
 
   // Handle column filters
   const filters = JSON.parse((req.query.filters as string) || "[]");
-  console.log(filters);
 
   for (const filter of filters) {
     console.log(filter);

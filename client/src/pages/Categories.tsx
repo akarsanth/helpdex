@@ -129,6 +129,7 @@ const Categories = () => {
         columns={columns}
         data={categories}
         enableSorting
+        enableGlobalFilter
         enableColumnFilters={false}
         enablePagination
       />

@@ -31,6 +31,7 @@ const Users = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+  const [globalFilter, setGlobalFilter] = useState("");
   const [columnFilters, setColumnFilters] = useState<MRT_ColumnFiltersState>(
     []
   );
@@ -45,6 +46,7 @@ const Users = () => {
         pageIndex: pagination.pageIndex,
         pageSize: pagination.pageSize,
         filters: columnFilters,
+        search: globalFilter,
       });
       setUsers(res.users);
       setTotal(res.total);
@@ -54,16 +56,20 @@ const Users = () => {
     } finally {
       setLoading(false);
     }
-  }, [pagination.pageIndex, pagination.pageSize, columnFilters]);
+  }, [pagination.pageIndex, pagination.pageSize, columnFilters, globalFilter]);
 
   useEffect(() => {
     loadUsers();
   }, [loadUsers]);
 
   const columns: MRT_ColumnDef<User>[] = [
-    { accessorKey: "name", header: "Name" },
-    { accessorKey: "email", header: "Email" },
-    { accessorKey: "companyName", header: "Company" },
+    { accessorKey: "name", header: "Name", enableColumnFilter: false },
+    { accessorKey: "email", header: "Email", enableColumnFilter: false },
+    {
+      accessorKey: "companyName",
+      header: "Company",
+      enableColumnFilter: false,
+    },
     {
       accessorKey: "role",
       header: "Role",
@@ -141,14 +147,14 @@ const Users = () => {
           isLoading: loading,
           pagination,
           columnFilters,
+          globalFilter,
         }}
         onPaginationChange={setPagination}
         onColumnFiltersChange={setColumnFilters}
+        onGlobalFilterChange={setGlobalFilter}
         manualPagination
         manualFiltering
-        enableGlobalFilter={false}
-        enableColumnFilters
-        enableSorting
+        enableGlobalFilter
         enableColumnActions
         enableColumnOrdering
         enableTableHead
