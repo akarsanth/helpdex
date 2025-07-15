@@ -13,7 +13,6 @@ import Unauthorized from "../pages/Unauthorized";
 // Dashboard Pages
 import CreateTicket from "../pages/CreateTicket";
 import Categories from "../pages/Categories";
-import Statuses from "../pages/Statuses";
 import Users from "../pages/Users";
 import Profile from "../pages/Profile";
 import TicketDetail from "../pages/TicketDetail";
@@ -47,7 +46,6 @@ const dashboardRoutes = [
   { path: "all-tickets", element: <Tickets />, roles: ["qa"] },
   { path: "all-tickets/:ticketId", element: <TicketDetail />, roles: ["qa"] },
   { path: "categories", element: <Categories />, roles: ["qa"] },
-  { path: "statuses", element: <Statuses />, roles: ["qa"] },
   { path: "users", element: <Users />, roles: ["admin"] },
   {
     path: "profile",

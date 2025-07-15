@@ -1,5 +1,7 @@
+import type { User } from "../types";
 import axiosInstance from "../utils/axios";
 import { AxiosError } from "axios";
+import type { MRT_ColumnFiltersState } from "material-react-table";
 
 // Update Password
 interface PasswordUpdateInput {
@@ -112,6 +114,61 @@ export const cancelPendingEmail = async () => {
       axiosError.response?.data?.message ||
       axiosError.message ||
       "Cancel failed";
+    throw new Error(msg);
+  }
+};
+
+// Get All Users
+interface FetchUsersOptions {
+  pageIndex: number;
+  pageSize: number;
+  filters: MRT_ColumnFiltersState;
+}
+
+interface FetchUsersResponse {
+  users: User[];
+  total: number;
+}
+
+export const fetchUsers = async (
+  options?: FetchUsersOptions
+): Promise<FetchUsersResponse> => {
+  try {
+    const response = await axiosInstance.get<FetchUsersResponse>(
+      "/api/v1/users",
+      {
+        params: {
+          page: (options?.pageIndex ?? 0) + 1,
+          pageSize: options?.pageSize ?? 10,
+          filters: JSON.stringify(options?.filters ?? []),
+        },
+      }
+    );
+    return response.data;
+  } catch (error: unknown) {
+    const axiosError = error as AxiosError<{ message?: string }>;
+    const msg =
+      axiosError.response?.data?.message ||
+      axiosError.message ||
+      "Failed to fetch users.";
+    throw new Error(msg);
+  }
+};
+
+// Update user
+export const updateUser = async (
+  userId: string,
+  payload: Partial<Pick<User, "role" | "isApprovedByAdmin">>
+): Promise<User> => {
+  try {
+    const res = await axiosInstance.put(`/api/v1/users/${userId}`, payload);
+    return res.data.user;
+  } catch (error: unknown) {
+    const axiosError = error as AxiosError<{ message?: string }>;
+    const msg =
+      axiosError.response?.data?.message ||
+      axiosError.message ||
+      "User update failed.";
     throw new Error(msg);
   }
 };

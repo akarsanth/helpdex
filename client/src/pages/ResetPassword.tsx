@@ -85,8 +85,11 @@ const ResetPassword = () => {
       } else {
         dispatch(setMessage({ type: "info", message: data.message }));
       }
-    } catch (err: any) {
-      setError(err.message || "Failed to resend OTP.");
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Password update failed.";
+
+      setError(msg || "Failed to resend OTP.");
     }
   };
 

@@ -16,6 +16,8 @@ import {
   updatePassword,
   updateEmail,
   cancelPendingEmail,
+  getAllUsers,
+  updateUser,
 } from "../controllers/user-controllers";
 import { protect } from "../middlewares/auth";
 import { authorizeRoles } from "../middlewares/authorize";
@@ -53,3 +55,6 @@ router.put("/update-email", protect, updateEmail);
 // cancel email update
 router.put("/cancel-pending-email", protect, cancelPendingEmail);
 export default router;
+
+router.get("/", protect, authorizeRoles("admin"), getAllUsers);
+router.put("/:id", protect, authorizeRoles("admin"), updateUser);

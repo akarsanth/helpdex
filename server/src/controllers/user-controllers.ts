@@ -739,3 +739,70 @@ export const cancelPendingEmail = asyncHandler(
       .json({ message: "Pending email change has been cancelled." });
   }
 );
+
+// @desc    Get all users (admin only)
+// @route   GET /api/v1/users
+// @access  Private/Admin
+export const getAllUsers = asyncHandler(async (req: Request, res: Response) => {
+  if (req.user?.role !== "admin") {
+    res.status(403);
+    throw new Error("Access denied");
+  }
+
+  const page = parseInt(req.query.page as string) || 1;
+  const pageSize = parseInt(req.query.pageSize as string) || 10;
+  const filters = JSON.parse((req.query.filters as string) || "[]");
+
+  const query: Record<string, any> = {};
+
+  for (const filter of filters) {
+    const { id, value } = filter;
+
+    // Convert boolean strings to actual booleans
+    if (id === "isEmailVerified" || id === "isApprovedByAdmin") {
+      query[id] = value === "true";
+    } else {
+      query[id] = value;
+    }
+  }
+
+  const total = await User.countDocuments(query);
+
+  const users = await User.find(query)
+    .sort({ createdAt: -1 })
+    .skip((page - 1) * pageSize)
+    .limit(pageSize)
+    .select("-password -resetOtp");
+
+  res.status(200).json({ users, total });
+});
+
+// @desc    Update user role or admin approval (admin only)
+// @route   PUT /api/v1/users/:id
+// @access  Private/Admin
+export const updateUser = asyncHandler(async (req: Request, res: Response) => {
+  if (req.user?.role !== "admin") {
+    res.status(403);
+    throw new Error("Access denied");
+  }
+
+  const { id } = req.params;
+  const { role, isApprovedByAdmin } = req.body;
+
+  const user = await User.findById(id);
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found");
+  }
+
+  if (role) user.role = role;
+  if (typeof isApprovedByAdmin === "boolean") {
+    user.isApprovedByAdmin = isApprovedByAdmin;
+    user.adminApprovedAt = isApprovedByAdmin ? new Date() : undefined;
+  }
+
+  await user.save();
+
+  const updatedUser = await User.findById(id).select("-password -resetOtp");
+  res.status(200).json({ success: true, user: updatedUser });
+});
