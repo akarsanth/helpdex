@@ -9,6 +9,9 @@ import {
 } from "../utils/status-transition";
 import User from "../models/user-model";
 import Comment from "../models/comment-model";
+import Notification from "../models/notification-model";
+import sendEmail from "../utils/send-email";
+import config from "../config";
 
 // @desc    Create a new support ticket
 // @route   POST /api/v1/tickets
@@ -298,6 +301,23 @@ export const assignDeveloper = asyncHandler(
 
     await ticket.save();
 
+    // send email
+    await sendEmail({
+      to: developer.email,
+      subject: "You have been assigned a new ticket",
+      heading: "New Ticket Assignment",
+      message: `You have been assigned to the ticket: "${ticket.title}". Please check the ticket details and start work accordingly.`,
+      buttonText: "View Ticket",
+      buttonUrl: `${config.domain}/assigned/${ticket._id}`,
+    });
+
+    // Create notification for the developer
+    await Notification.create({
+      ticket_id: ticket._id,
+      user_id: developer._id,
+      message: `You have been assigned to ticket: "${ticket.title}"`,
+    });
+
     const updatedTicket = await Ticket.findById(ticketId)
       .populate("category_id", "name")
       .populate("assigned_to", "name email")
@@ -310,6 +330,7 @@ export const assignDeveloper = asyncHandler(
       res.status(500);
       throw new Error("Failed to populate updated ticket.");
     }
+
     const { category_id, ...rest } = updatedTicket;
 
     res.status(200).json({
@@ -317,7 +338,7 @@ export const assignDeveloper = asyncHandler(
       message: "Ticket status updated.",
       ticket: {
         ...rest,
-        category: category_id, // mapped
+        category: category_id,
       },
     });
   }
