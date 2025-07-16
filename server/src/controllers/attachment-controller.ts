@@ -6,6 +6,8 @@ import {
   fileToBuffer,
   uploadBufferToCloudinary,
 } from "../utils/cloudinary-upload";
+import asyncHandler from "express-async-handler";
+import { deleteFromCloudinary } from "../utils/cloudinary-upload";
 
 // @desc    Upload an attachment file
 // @route   POST /api/v1/attachments/upload
@@ -44,3 +46,29 @@ export const uploadAttachment = async (req: Request, res: Response) => {
     }
   });
 };
+
+// @desc    Delete an uploaded attachment
+// @route   DELETE /api/v1/attachments/:id
+// @access  Protected
+export const deleteAttachment = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    const attachment = await Attachment.findById(id);
+    if (!attachment) {
+      res.status(404);
+      throw new Error("Attachment not found");
+    }
+
+    // Delete from Cloudinary using filename (public_id)
+    await deleteFromCloudinary(attachment.filename);
+
+    // Remove from DB
+    await attachment.deleteOne();
+
+    res.status(200).json({
+      success: true,
+      message: "Attachment deleted successfully",
+    });
+  }
+);

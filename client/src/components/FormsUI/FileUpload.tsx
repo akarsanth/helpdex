@@ -8,10 +8,12 @@ import {
   ListItem,
   Link,
 } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import axiosInstance from "../../utils/axios";
 import type { AxiosError } from "axios";
+import { deleteAttachment } from "../../services/attachment-service";
 
 interface FileUploadProps {
   onUploadSuccess: (id: string) => void;
@@ -93,6 +95,16 @@ const FileUpload = ({
     setUploading(false);
   };
 
+  // delete uploaded file
+  const handleRemoveFile = async (id: string) => {
+    try {
+      await deleteAttachment(id);
+      setUploadedFiles((prev) => prev.filter((file) => file._id !== id));
+    } catch (err) {
+      onUploadError((err as Error).message);
+    }
+  };
+
   return (
     <Box sx={{ my: 2 }}>
       <Button
@@ -140,6 +152,13 @@ const FileUpload = ({
                 >
                   {file.name}
                 </Link>
+                <Button
+                  onClick={() => handleRemoveFile(file._id)}
+                  size="small"
+                  sx={{ minWidth: 0, p: 0, ml: 1 }}
+                >
+                  <CloseIcon fontSize="small" color="error" />
+                </Button>
               </ListItem>
             ))}
           </List>
