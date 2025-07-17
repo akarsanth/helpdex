@@ -197,7 +197,6 @@ export const updateTicketStatus = asyncHandler(
       throw new Error("Ticket not found.");
     }
 
-    // Only allow dev if assigned
     if (
       user.role === "developer" &&
       (!ticket.assigned_to ||
@@ -224,10 +223,6 @@ export const updateTicketStatus = asyncHandler(
     const now = new Date();
 
     switch (status) {
-      case "Assigned":
-        ticket.assigned_at = now;
-        ticket.assigned_by = user._id;
-        break;
       case "Resolved":
         ticket.resolved_at = now;
         break;
@@ -242,18 +237,80 @@ export const updateTicketStatus = asyncHandler(
 
     await ticket.save();
 
-    const updatedTicket = await Ticket.findById(ticketId)
+    // Re-fetch for full data
+    const updatedTicket = (await Ticket.findById(ticketId)
       .populate("category_id", "name")
       .populate("assigned_to", "name email")
       .populate("assigned_by", "name email")
       .populate("closed_by", "name email")
       .populate("created_by", "name email")
-      .lean();
+      .lean()) as unknown as {
+      _id: string;
+      title: string;
+      created_by?: { _id: string; email: string; name: string };
+      assigned_to?: { _id: string; email: string; name: string };
+      category_id: { name: string };
+    };
 
     if (!updatedTicket) {
       res.status(500);
       throw new Error("Failed to populate updated ticket.");
     }
+
+    // Send email based on status
+    try {
+      let recipientEmail: string | undefined;
+      let recipientUserId: string | undefined;
+      let message = "";
+      let buttonUrl: string = "";
+
+      switch (status) {
+        case "Resolved":
+        case "Closed":
+          if (
+            updatedTicket.created_by?.email &&
+            updatedTicket.created_by?._id
+          ) {
+            recipientEmail = updatedTicket.created_by.email;
+            recipientUserId = updatedTicket.created_by._id;
+            message = `Your ticket "${updatedTicket.title}" has been ${status.toLowerCase()}.`;
+            buttonUrl = `${config.domain}/tickets`; // Client view
+          }
+          break;
+        case "Reopened":
+          if (
+            updatedTicket.assigned_to?.email &&
+            updatedTicket.assigned_to?._id
+          ) {
+            recipientEmail = updatedTicket.assigned_to.email;
+            recipientUserId = updatedTicket.assigned_to._id;
+            message = `Ticket "${updatedTicket.title}" has been reopened. Please review.`;
+            buttonUrl = `${config.domain}/assigned`; // Developer view
+          }
+          break;
+      }
+
+      if (recipientEmail && recipientUserId && buttonUrl) {
+        await sendEmail({
+          to: recipientEmail,
+          subject: `Ticket Status Updated: ${status}`,
+          heading: "Ticket Update",
+          message,
+          buttonText: "View Ticket",
+          buttonUrl,
+        });
+
+        await Notification.create({
+          user_id: recipientUserId,
+          ticket_id: ticket._id,
+          message,
+        });
+      }
+    } catch (error) {
+      console.error("Email or notification failed:", error);
+      // continue silently
+    }
+
     const { category_id, ...rest } = updatedTicket;
     res.status(200).json({
       success: true,
