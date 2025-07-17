@@ -197,7 +197,7 @@ export const updateTicketStatus = asyncHandler(
       throw new Error("Ticket not found.");
     }
 
-    // Only allow dev if assigned
+    // Developer can only update their assigned tickets
     if (
       user.role === "developer" &&
       (!ticket.assigned_to ||
@@ -207,6 +207,7 @@ export const updateTicketStatus = asyncHandler(
       throw new Error("Access denied. You are not assigned to this ticket.");
     }
 
+    // Validate status transition
     const isValid = isValidStatusTransition(
       ticket.status,
       status as StatusName,
@@ -219,15 +220,11 @@ export const updateTicketStatus = asyncHandler(
       );
     }
 
-    // Update status and timestamps
-    ticket.status = status as StatusName;
+    // Apply status and timestamps (only where relevant)
     const now = new Date();
+    ticket.status = status as StatusName;
 
     switch (status) {
-      case "Assigned":
-        ticket.assigned_at = now;
-        ticket.assigned_by = user._id;
-        break;
       case "Resolved":
         ticket.resolved_at = now;
         break;
@@ -238,22 +235,85 @@ export const updateTicketStatus = asyncHandler(
       case "Reopened":
         ticket.reopened_at = now;
         break;
+      // No timestamp for Acknowledged or In Progress
     }
 
     await ticket.save();
 
-    const updatedTicket = await Ticket.findById(ticketId)
+    // Re-fetch full populated ticket
+    const updatedTicket = (await Ticket.findById(ticketId)
       .populate("category_id", "name")
       .populate("assigned_to", "name email")
       .populate("assigned_by", "name email")
       .populate("closed_by", "name email")
       .populate("created_by", "name email")
-      .lean();
+      .lean()) as unknown as {
+      _id: string;
+      title: string;
+      created_by?: { _id: string; email: string; name: string };
+      assigned_to?: { _id: string; email: string; name: string };
+      category_id: { name: string };
+    };
 
     if (!updatedTicket) {
       res.status(500);
       throw new Error("Failed to populate updated ticket.");
     }
+
+    // Email and Notification (only for select statuses)
+    try {
+      let recipientEmail: string | undefined;
+      let recipientUserId: string | undefined;
+      let message = "";
+      let buttonUrl = "";
+
+      switch (status) {
+        case "Resolved":
+        case "Closed":
+          if (
+            updatedTicket.created_by?.email &&
+            updatedTicket.created_by?._id
+          ) {
+            recipientEmail = updatedTicket.created_by.email;
+            recipientUserId = updatedTicket.created_by._id;
+            message = `Your ticket "${updatedTicket.title}" has been ${status.toLowerCase()}.`;
+            buttonUrl = `${config.domain}/tickets/${ticket._id}`;
+          }
+          break;
+
+        case "Reopened":
+          if (
+            updatedTicket.assigned_to?.email &&
+            updatedTicket.assigned_to?._id
+          ) {
+            recipientEmail = updatedTicket.assigned_to.email;
+            recipientUserId = updatedTicket.assigned_to._id;
+            message = `Ticket "${updatedTicket.title}" has been reopened. Please review.`;
+            buttonUrl = `${config.domain}/assigned/${ticket._id}`;
+          }
+          break;
+      }
+
+      if (recipientEmail && recipientUserId && buttonUrl) {
+        await sendEmail({
+          to: recipientEmail,
+          subject: `Ticket Status Updated: ${status}`,
+          heading: "Ticket Update",
+          message,
+          buttonText: "View Ticket",
+          buttonUrl,
+        });
+
+        await Notification.create({
+          user_id: recipientUserId,
+          ticket_id: ticket._id,
+          message,
+        });
+      }
+    } catch (error) {
+      console.error("Email or notification failed:", error);
+    }
+
     const { category_id, ...rest } = updatedTicket;
     res.status(200).json({
       success: true,
