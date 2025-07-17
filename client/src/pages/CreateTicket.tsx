@@ -82,6 +82,11 @@ const CreateTicket = () => {
   // Track upload state to prevent submission while files are uploading
   const [uploading, setUploading] = useState(false);
 
+  // uploaded attachments
+  const [uploadedAttachmentIds, setUploadedAttachmentIds] = useState<string[]>(
+    []
+  );
+
   // Get available categories from Redux global state
   const categories = useSelector((state: RootState) => state.meta.categories);
 
@@ -101,7 +106,12 @@ const CreateTicket = () => {
     dispatch({ type: "REQUEST" });
 
     try {
-      const { message, ticket } = await createTicket(values);
+      console.log(values);
+      const { message, ticket } = await createTicket({
+        ...values,
+        attachments: uploadedAttachmentIds,
+      });
+
       dispatch({ type: "SUCCESS", payload: message });
       appDispatch(setMessage({ type: "success", message }));
       navigate(`/dashboard/my-tickets/${ticket._id}`);
@@ -124,81 +134,79 @@ const CreateTicket = () => {
         validationSchema={TICKET_FORM_VALIDATION}
         onSubmit={handleSubmit}
       >
-        {({ setFieldValue, values }) => (
-          <FormikForm>
-            <FormFields>
-              {/* Ticket title field */}
-              <Textfield name="title" label="Title" required />
+        <FormikForm>
+          <FormFields>
+            {/* Ticket title field */}
+            <Textfield name="title" label="Title" required />
 
-              {/* Ticket description field */}
-              <Textfield
-                name="description"
-                label="Description"
-                multiline
-                rows={4}
-                required
-              />
+            {/* Ticket description field */}
+            <Textfield
+              name="description"
+              label="Description"
+              multiline
+              rows={4}
+              required
+            />
 
-              {/* Priority dropdown */}
-              <Select
-                name="priority"
-                label="Priority"
-                list={PRIORITY_OPTIONS}
-                required
-              />
+            {/* Priority dropdown */}
+            <Select
+              name="priority"
+              label="Priority"
+              list={PRIORITY_OPTIONS}
+              required
+            />
 
-              {/* Category dropdown populated from Redux */}
-              <Select
-                name="category_id"
-                label="Category"
-                list={categories.map((cat) => ({
-                  id: cat._id,
-                  value: cat._id,
-                  text: cat.name,
-                }))}
-                required
-              />
+            {/* Category dropdown populated from Redux */}
+            <Select
+              name="category_id"
+              label="Category"
+              list={categories.map((cat) => ({
+                id: cat._id,
+                value: cat._id,
+                text: cat.name,
+              }))}
+              required
+            />
 
-              {/* File upload component with progress and error handling */}
-              <FileUpload
-                setUploading={setUploading}
-                uploading={uploading}
-                onUploadSuccess={(id) =>
-                  setFieldValue("attachments", [...values.attachments, id])
-                }
-                onUploadError={(msg) => {
-                  dispatch({ type: "FAIL", payload: msg });
-                  appDispatch(setMessage({ type: "error", message: msg }));
-                }}
-              />
+            {/* File upload component with progress and error handling */}
+            <FileUpload
+              setUploading={setUploading}
+              uploading={uploading}
+              onUploadSuccess={(id) =>
+                setUploadedAttachmentIds((prev) => [...prev, id])
+              }
+              onUploadError={(msg) => {
+                dispatch({ type: "FAIL", payload: msg });
+                appDispatch(setMessage({ type: "error", message: msg }));
+              }}
+            />
 
-              {/* Submit button disabled while uploading */}
-              <Button
-                color="secondary"
-                endIcon={<KeyboardArrowRightIcon />}
-                disableElevation
-                loading={state.isLoading}
-                disabled={uploading}
-              >
-                Create Ticket
-              </Button>
+            {/* Submit button disabled while uploading */}
+            <Button
+              color="secondary"
+              endIcon={<KeyboardArrowRightIcon />}
+              disableElevation
+              loading={state.isLoading}
+              disabled={uploading}
+            >
+              Create Ticket
+            </Button>
 
-              {/* Success message */}
-              {state.success && (
-                <Alert severity="success" sx={{ mt: 2 }}>
-                  {state.success}
-                </Alert>
-              )}
+            {/* Success message */}
+            {state.success && (
+              <Alert severity="success" sx={{ mt: 2 }}>
+                {state.success}
+              </Alert>
+            )}
 
-              {/* Error message */}
-              {state.error && (
-                <Alert severity="error" sx={{ mt: 2 }}>
-                  {state.error}
-                </Alert>
-              )}
-            </FormFields>
-          </FormikForm>
-        )}
+            {/* Error message */}
+            {state.error && (
+              <Alert severity="error" sx={{ mt: 2 }}>
+                {state.error}
+              </Alert>
+            )}
+          </FormFields>
+        </FormikForm>
       </Formik>
     </Box>
   );
