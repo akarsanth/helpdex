@@ -277,7 +277,7 @@ export const updateTicketStatus = asyncHandler(
             recipientEmail = updatedTicket.created_by.email;
             recipientUserId = updatedTicket.created_by._id;
             message = `Your ticket "${updatedTicket.title}" has been ${status.toLowerCase()}.`;
-            buttonUrl = `${config.domain}/tickets`;
+            buttonUrl = `${config.domain}/tickets/${ticket._id}`;
           }
           break;
 
@@ -289,7 +289,7 @@ export const updateTicketStatus = asyncHandler(
             recipientEmail = updatedTicket.assigned_to.email;
             recipientUserId = updatedTicket.assigned_to._id;
             message = `Ticket "${updatedTicket.title}" has been reopened. Please review.`;
-            buttonUrl = `${config.domain}/assigned`;
+            buttonUrl = `${config.domain}/assigned/${ticket._id}`;
           }
           break;
       }
