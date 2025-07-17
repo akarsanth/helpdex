@@ -1,7 +1,8 @@
 import type { StatusName } from "../utils/status-transition";
 import type { Category } from "./category";
 import type { User } from "./user";
-import type { Comment } from "./comment"; // ✅ Import Comment type
+import type { Comment } from "./comment";
+import type { Attachment } from "./attachment"; // ✅ Add this
 
 export type TicketPriority = "low" | "medium" | "high" | "urgent";
 
@@ -32,4 +33,5 @@ export interface Ticket {
   updatedAt: string;
 
   comments: Comment[];
+  attachments: Attachment[]; // ✅ New field added
 }

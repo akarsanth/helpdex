@@ -33,6 +33,8 @@ export const createTicket = asyncHandler(
       created_by: (req.user as IUser)._id,
     });
 
+    console.log(attachments);
+
     if (Array.isArray(attachments) && attachments.length > 0) {
       await Attachment.updateMany(
         { _id: { $in: attachments } },
@@ -154,10 +156,14 @@ export const getTicketById = asyncHandler(
       .sort({ created_at: 1 })
       .lean();
 
-    //  If the current user is a client, filter out internal comments
     if (user.role === "client") {
       comments = comments.filter((c) => !c.is_internal);
     }
+
+    // Fetch attachments
+    const attachments = await Attachment.find({ ticket_id: ticketId })
+      .select("_id original_name path")
+      .lean();
 
     const { category_id, ...rest } = ticket;
 
@@ -167,6 +173,7 @@ export const getTicketById = asyncHandler(
         ...rest,
         category: category_id,
         comments,
+        attachments, // Include here
       },
     });
   }

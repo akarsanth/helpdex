@@ -10,6 +10,7 @@ import TicketAccordionWrapper from "../components/TicketDetail/TicketAccordionWr
 import TicketCommentsAccordion from "../components/TicketDetail/TicketCommentsAccordion";
 import TicketInfoAccordion from "../components/TicketDetail/TicketInfoAccordion";
 import TicketEditAccordion from "../components/TicketDetail/TicketEditAccordion";
+import TicketAttachmentsAccordion from "../components/TicketDetail/TicketAttachmentsAccordion";
 import {
   getTicketById,
   updateTicketStatus,
@@ -40,6 +41,8 @@ const TicketDetail = () => {
   useEffect(() => {
     fetchTicket();
   }, [fetchTicket]);
+
+  console.log(ticket);
 
   const handleStatusOrAssignment = async (
     action: "status" | "assign",
@@ -96,6 +99,7 @@ const TicketDetail = () => {
       <TicketAccordionWrapper>
         <TicketInfoAccordion ticket={ticket} />
         <TicketEditAccordion ticket={ticket} onUpdate={fetchTicket} />
+        <TicketAttachmentsAccordion attachments={ticket.attachments} />
         <TicketCommentsAccordion
           ticketId={ticket._id}
           initialComments={ticket.comments}
