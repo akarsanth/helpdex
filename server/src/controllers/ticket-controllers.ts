@@ -197,6 +197,7 @@ export const updateTicketStatus = asyncHandler(
       throw new Error("Ticket not found.");
     }
 
+    // Developer can only update their assigned tickets
     if (
       user.role === "developer" &&
       (!ticket.assigned_to ||
@@ -206,6 +207,7 @@ export const updateTicketStatus = asyncHandler(
       throw new Error("Access denied. You are not assigned to this ticket.");
     }
 
+    // Validate status transition
     const isValid = isValidStatusTransition(
       ticket.status,
       status as StatusName,
@@ -218,9 +220,9 @@ export const updateTicketStatus = asyncHandler(
       );
     }
 
-    // Update status and timestamps
-    ticket.status = status as StatusName;
+    // Apply status and timestamps (only where relevant)
     const now = new Date();
+    ticket.status = status as StatusName;
 
     switch (status) {
       case "Resolved":
@@ -233,11 +235,12 @@ export const updateTicketStatus = asyncHandler(
       case "Reopened":
         ticket.reopened_at = now;
         break;
+      // No timestamp for Acknowledged or In Progress
     }
 
     await ticket.save();
 
-    // Re-fetch for full data
+    // Re-fetch full populated ticket
     const updatedTicket = (await Ticket.findById(ticketId)
       .populate("category_id", "name")
       .populate("assigned_to", "name email")
@@ -257,12 +260,12 @@ export const updateTicketStatus = asyncHandler(
       throw new Error("Failed to populate updated ticket.");
     }
 
-    // Send email based on status
+    // Email and Notification (only for select statuses)
     try {
       let recipientEmail: string | undefined;
       let recipientUserId: string | undefined;
       let message = "";
-      let buttonUrl: string = "";
+      let buttonUrl = "";
 
       switch (status) {
         case "Resolved":
@@ -274,9 +277,10 @@ export const updateTicketStatus = asyncHandler(
             recipientEmail = updatedTicket.created_by.email;
             recipientUserId = updatedTicket.created_by._id;
             message = `Your ticket "${updatedTicket.title}" has been ${status.toLowerCase()}.`;
-            buttonUrl = `${config.domain}/tickets`; // Client view
+            buttonUrl = `${config.domain}/tickets`;
           }
           break;
+
         case "Reopened":
           if (
             updatedTicket.assigned_to?.email &&
@@ -285,7 +289,7 @@ export const updateTicketStatus = asyncHandler(
             recipientEmail = updatedTicket.assigned_to.email;
             recipientUserId = updatedTicket.assigned_to._id;
             message = `Ticket "${updatedTicket.title}" has been reopened. Please review.`;
-            buttonUrl = `${config.domain}/assigned`; // Developer view
+            buttonUrl = `${config.domain}/assigned`;
           }
           break;
       }
@@ -308,7 +312,6 @@ export const updateTicketStatus = asyncHandler(
       }
     } catch (error) {
       console.error("Email or notification failed:", error);
-      // continue silently
     }
 
     const { category_id, ...rest } = updatedTicket;
