@@ -11,6 +11,7 @@ import {
 } from "../../utils/status-transition";
 import AssignDeveloperModal from "./AssignDeveloperModal";
 import { fetchDevelopers, type Developer } from "../../services/ticket-service";
+import { statusColorMap } from "../../utils/status-transition";
 
 interface Props {
   ticket: Ticket;
@@ -19,19 +20,6 @@ interface Props {
     payload: StatusName | { developerId: string }
   ) => void;
 }
-
-const statusColorMap: Record<
-  StatusName,
-  "default" | "primary" | "secondary" | "error" | "success" | "warning"
-> = {
-  Open: "default",
-  Acknowledged: "secondary",
-  Assigned: "primary",
-  "In Progress": "warning",
-  Resolved: "success",
-  Closed: "success",
-  Reopened: "error",
-};
 
 const TicketHeaderSection = ({ ticket, onStatusOrAssignment }: Props) => {
   const currentUser = useSelector((state: RootState) => state.auth.user);
