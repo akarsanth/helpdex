@@ -50,6 +50,14 @@ const authSlice = createSlice({
       state.message = null;
       state.unverifiedEmail = null;
     },
+    // for response interceptor (axios)
+    setAccessToken: (state, action) => {
+      state.accessToken = action.payload;
+    },
+    setUser: (state, action) => {
+      state.user = action.payload;
+      state.isLoggedIn = true;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -116,5 +124,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { resetAuthState, clearStatus } = authSlice.actions;
+export const { resetAuthState, clearStatus, setAccessToken, setUser } =
+  authSlice.actions;
 export default authSlice.reducer;
