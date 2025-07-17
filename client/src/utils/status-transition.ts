@@ -80,3 +80,26 @@ export const getActionLabel = (
 
   return labelMap[next] ?? `Move to ${next}`;
 };
+
+export const statusColorMap: Record<
+  StatusName,
+  "default" | "primary" | "secondary" | "error" | "success" | "warning"
+> = {
+  Open: "default",
+  Acknowledged: "secondary",
+  Assigned: "primary",
+  "In Progress": "warning",
+  Resolved: "success",
+  Closed: "success",
+  Reopened: "error",
+};
+
+export const statusBorderColorMap: Record<StatusName, string> = {
+  Open: "#9e9e9e", // grey
+  Acknowledged: "#9c27b0", // purple
+  Assigned: "#1976d2", // blue
+  "In Progress": "#ed6c02", // orange
+  Resolved: "#2e7d32", // green
+  Closed: "#388e3c", // green dark
+  Reopened: "#d32f2f", // red
+};
