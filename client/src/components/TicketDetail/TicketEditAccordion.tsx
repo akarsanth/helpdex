@@ -68,7 +68,13 @@ const TicketEditAccordion = ({ ticket, onUpdate }: Props) => {
     description: ticket.description,
     priority: ticket.priority,
     category_id: ticket.category?._id || "",
-    deadline: ticket.deadline?.split("T")[0] || "",
+
+    deadline: ticket.deadline
+      ? new Date(ticket.deadline)
+          .toLocaleString("sv-SE", { hour12: false })
+          .replace(" ", "T")
+          .slice(0, 16)
+      : "",
   };
 
   const VALIDATION_SCHEMA = Yup.object({
@@ -96,7 +102,16 @@ const TicketEditAccordion = ({ ticket, onUpdate }: Props) => {
     }),
     deadline: Yup.string().when([], {
       is: () => canEdit.includes("deadline"),
-      then: (schema) => schema.required("Required"),
+      then: (schema) =>
+        schema
+          .required("Required")
+          .test("not-in-past", "Deadline cannot be before now", (value) => {
+            if (!value) return false;
+            // Input value is local time, so compare to now in local time
+            const inputTime = new Date(value).getTime();
+            const nowTime = Date.now();
+            return inputTime >= nowTime;
+          }),
     }),
   });
 
@@ -204,7 +219,7 @@ const TicketEditAccordion = ({ ticket, onUpdate }: Props) => {
                   <Textfield
                     name="deadline"
                     label="Deadline"
-                    type="date"
+                    type="datetime-local"
                     required
                     InputLabelProps={{ shrink: true }}
                   />
