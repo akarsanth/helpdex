@@ -213,6 +213,7 @@ export const updateTicketStatus = asyncHandler(
 
       switch (status) {
         case "Resolved":
+        case "Acknowledge":
         case "Closed":
           if (
             updatedTicket.created_by?.email &&
@@ -221,7 +222,7 @@ export const updateTicketStatus = asyncHandler(
             recipientEmail = updatedTicket.created_by.email;
             recipientUserId = updatedTicket.created_by._id;
             message = `Your ticket "${updatedTicket.title}" has been ${status.toLowerCase()}.`;
-            buttonUrl = `${config.domain}/tickets/${ticket._id}`;
+            buttonUrl = `${config.domain}/dashboard/tickets/${ticket._id}`;
           }
           break;
 
@@ -233,7 +234,7 @@ export const updateTicketStatus = asyncHandler(
             recipientEmail = updatedTicket.assigned_to.email;
             recipientUserId = updatedTicket.assigned_to._id;
             message = `Ticket "${updatedTicket.title}" has been reopened. Please review.`;
-            buttonUrl = `${config.domain}/assigned/${ticket._id}`;
+            buttonUrl = `${config.domain}/dashboard/assigned/${ticket._id}`;
           }
           break;
       }
@@ -305,6 +306,8 @@ export const assignDeveloper = asyncHandler(
 
     await ticket.save();
 
+    console.log(developer);
+    console.log(developer.email);
     // send email
     await sendEmail({
       to: developer.email,
@@ -312,7 +315,7 @@ export const assignDeveloper = asyncHandler(
       heading: "New Ticket Assignment",
       message: `You have been assigned to the ticket: "${ticket.title}". Please check the ticket details and start work accordingly.`,
       buttonText: "View Ticket",
-      buttonUrl: `${config.domain}/assigned/${ticket._id}`,
+      buttonUrl: `${config.domain}/dashboard/assigned/${ticket._id}`,
     });
 
     // Create notification for the developer
