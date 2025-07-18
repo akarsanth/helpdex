@@ -24,8 +24,13 @@ import {
 } from "@mui/material";
 
 import MenuIcon from "@mui/icons-material/Menu";
-import InboxIcon from "@mui/icons-material/MoveToInbox";
-import MailIcon from "@mui/icons-material/Mail";
+import HomeIcon from "@mui/icons-material/Home";
+import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber"; // Ticket icon
+import AddCircleIcon from "@mui/icons-material/AddCircle";
+import PersonIcon from "@mui/icons-material/Person";
+import AssignmentIndIcon from "@mui/icons-material/AssignmentInd"; // Assigned Tickets
+import CategoryIcon from "@mui/icons-material/Category";
+import GroupIcon from "@mui/icons-material/Group"; // Users (Admin)
 import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import { styled } from "@mui/material";
 
@@ -50,38 +55,45 @@ const roleLinks: Record<
   { label: string; path: string; icon: React.ReactNode }[]
 > = {
   client: [
-    { label: "Home", path: "/dashboard", icon: <InboxIcon /> },
-    { label: "My Tickets", path: "/dashboard/my-tickets", icon: <InboxIcon /> },
+    { label: "Home", path: "/dashboard", icon: <HomeIcon /> },
+    {
+      label: "My Tickets",
+      path: "/dashboard/my-tickets",
+      icon: <ConfirmationNumberIcon />,
+    },
     {
       label: "Create Ticket",
       path: "/dashboard/create-ticket",
-      icon: <MailIcon />,
+      icon: <AddCircleIcon />,
     },
-    { label: "Profile", path: "/dashboard/profile", icon: <InboxIcon /> },
+    { label: "Profile", path: "/dashboard/profile", icon: <PersonIcon /> },
   ],
   developer: [
-    { label: "Home", path: "/dashboard", icon: <InboxIcon /> },
+    { label: "Home", path: "/dashboard", icon: <HomeIcon /> },
     {
       label: "Assigned Tickets",
       path: "/dashboard/assigned",
-      icon: <InboxIcon />,
+      icon: <AssignmentIndIcon />,
     },
-    { label: "Profile", path: "/dashboard/profile", icon: <InboxIcon /> },
+    { label: "Profile", path: "/dashboard/profile", icon: <PersonIcon /> },
   ],
   qa: [
-    { label: "Home", path: "/dashboard", icon: <InboxIcon /> },
+    { label: "Home", path: "/dashboard", icon: <HomeIcon /> },
     {
       label: "All Tickets",
       path: "/dashboard/all-tickets",
-      icon: <InboxIcon />,
+      icon: <ConfirmationNumberIcon />,
     },
-    { label: "Categories", path: "/dashboard/categories", icon: <MailIcon /> },
-    { label: "Profile", path: "/dashboard/profile", icon: <InboxIcon /> },
+    {
+      label: "Categories",
+      path: "/dashboard/categories",
+      icon: <CategoryIcon />,
+    },
+    { label: "Profile", path: "/dashboard/profile", icon: <PersonIcon /> },
   ],
   admin: [
-    { label: "Users", path: "/dashboard/users", icon: <InboxIcon /> },
-    { label: "Settings", path: "/dashboard/settings", icon: <MailIcon /> },
-    { label: "Reports", path: "/dashboard/reports", icon: <InboxIcon /> },
+    { label: "Users", path: "/dashboard/users", icon: <GroupIcon /> },
+    { label: "Profile", path: "/dashboard/profile", icon: <PersonIcon /> },
   ],
 };
 
