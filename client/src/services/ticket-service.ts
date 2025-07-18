@@ -141,7 +141,6 @@ export const fetchTickets = async (
   options?: FetchTicketsOptions
 ): Promise<FetchTicketsResponse> => {
   try {
-    console.log(options?.filters);
     const response = await axiosInstance.get<FetchTicketsResponse>(
       "/api/v1/tickets",
       {
@@ -191,4 +190,55 @@ export const updateTicketDetails = async (
         "Failed to update ticket."
     );
   }
+};
+
+// Service to fetch ticket dashboard summary
+export interface TicketSummaryResponse {
+  statusCounts: Record<string, number>;
+  upcomingTickets?: Pick<Ticket, "_id" | "title" | "status" | "deadline">[];
+  overdueTickets?: Pick<Ticket, "_id" | "title" | "status" | "deadline">[];
+  recentAssignedTickets?: Pick<
+    Ticket,
+    "_id" | "title" | "status" | "assigned_at"
+  >[];
+}
+
+export const fetchTicketSummary = async (): Promise<TicketSummaryResponse> => {
+  try {
+    const response = await axiosInstance.get<TicketSummaryResponse>(
+      "/api/v1/tickets/summary"
+    );
+    return response.data;
+  } catch (error: unknown) {
+    const axiosError = error as AxiosError<{ message: string }>;
+    throw new Error(
+      axiosError.response?.data?.message ||
+        axiosError.message ||
+        "Failed to fetch ticket summary."
+    );
+  }
+};
+
+// Average resolution time
+export interface AvgResolutionTimeResponse {
+  avgResolutionTimeMs: number;
+  avgResolutionTimeStr: string;
+  count: number;
+}
+
+export const fetchAvgResolutionTime = async (
+  from?: string,
+  to?: string
+): Promise<AvgResolutionTimeResponse> => {
+  const params: Record<string, string> = {};
+  if (from) params.from = from;
+  if (to) params.to = to;
+
+  const { data } = await axiosInstance.get<AvgResolutionTimeResponse>(
+    "/api/v1/tickets/average-resolution-time",
+    { params }
+  );
+  return data;
+
+  console.log(data);
 };
