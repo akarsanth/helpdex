@@ -20,6 +20,7 @@ import {
   Menu,
   MenuItem,
   Tooltip,
+  Chip,
 } from "@mui/material";
 
 import MenuIcon from "@mui/icons-material/Menu";
@@ -152,7 +153,7 @@ export default function DashboardLayout(props: Props) {
 
   // Sidebar drawer content
   const drawer = (
-    <div>
+    <Box display="flex" flexDirection="column" height="100vh">
       <Toolbar
         sx={{
           minHeight: 64,
@@ -164,17 +165,26 @@ export default function DashboardLayout(props: Props) {
         <BrandLogo src={logo} />
       </Toolbar>
       <Divider />
-      <List>
-        {links.map(({ label, path, icon }) => (
-          <ListItem key={label} disablePadding onClick={() => navigate(path)}>
-            <ListItemButton selected={location.pathname === path}>
-              <ListItemIcon>{icon}</ListItemIcon>
-              <ListItemText primary={label} />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
-    </div>
+      <Box sx={{ flexGrow: 1, overflow: "auto" }}>
+        <List>
+          {links.map(({ label, path, icon }) => (
+            <ListItem key={label} disablePadding onClick={() => navigate(path)}>
+              <ListItemButton selected={location.pathname === path}>
+                <ListItemIcon>{icon}</ListItemIcon>
+                <ListItemText primary={label} />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+      </Box>
+      <Box sx={{ p: 2, mt: "auto", display: "flex", justifyContent: "center" }}>
+        <Chip
+          label={`${user?.role} View`.toUpperCase()}
+          color="primary"
+          sx={{ fontWeight: 600, letterSpacing: 1 }}
+        />
+      </Box>
+    </Box>
   );
 
   // For responsive drawer behavior

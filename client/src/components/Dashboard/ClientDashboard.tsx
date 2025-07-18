@@ -1,30 +1,26 @@
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import {
+  Alert,
   Box,
+  Button,
   Card,
   CardContent,
   CircularProgress,
   Grid,
   Typography,
-  Button,
-  Alert,
 } from "@mui/material";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import type { RootState } from "../../redux/store";
 import { fetchTicketSummary } from "../../services/ticket-service";
-import type { Ticket } from "../../types";
 import {
+  rolePathMap,
   STATUS_ORDER,
   statusBorderColorMap,
-  rolePathMap,
 } from "../../utils/status-transition";
-import { useNavigate } from "react-router-dom";
 
-interface TicketSummaryResponse {
-  statusCounts: Record<string, number>;
-  upcomingTickets: Pick<Ticket, "_id" | "title" | "status" | "deadline">[];
-}
+import type { TicketSummaryResponse } from "../../services/ticket-service";
 
 const ClientDashboard = () => {
   const navigate = useNavigate();
@@ -107,11 +103,11 @@ const ClientDashboard = () => {
           <Typography variant="h6" gutterBottom sx={{ mb: 1 }}>
             Tickets Near Deadline
           </Typography>
-          {summary?.upcomingTickets.length === 0 ? (
+          {(summary?.upcomingTickets ?? []).length === 0 ? (
             <Typography>No upcoming deadlines.</Typography>
           ) : (
             <Grid container spacing={2} mb={3}>
-              {summary?.upcomingTickets.map((ticket) => (
+              {(summary?.upcomingTickets ?? []).map((ticket) => (
                 <Grid size={{ xs: 12, md: 4 }} key={ticket._id}>
                   <Card
                     sx={{ cursor: "pointer" }}
