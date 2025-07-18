@@ -368,10 +368,7 @@ export const getTickets = asyncHandler(async (req: Request, res: Response) => {
 
   // Global search
   if (search) {
-    query.$or = [
-      { title: { $regex: search, $options: "i" } },
-      { description: { $regex: search, $options: "i" } },
-    ];
+    query.$or = [{ title: { $regex: search, $options: "i" } }];
   }
 
   // Handle column filters
