@@ -153,7 +153,7 @@ const TicketList = () => {
       filterSelectOptions: STATUS_ORDER,
     },
     {
-      accessorKey: "category_id",
+      accessorKey: "category.name",
       header: "Category",
       filterVariant: "select",
       filterFn: "equals",
@@ -192,6 +192,8 @@ const TicketList = () => {
         new Date(cell.getValue<string>()).toLocaleDateString(),
     },
   ];
+
+  console.log(tickets);
 
   return (
     <Box sx={{ my: 3 }}>
