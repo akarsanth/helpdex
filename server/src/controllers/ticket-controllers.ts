@@ -585,11 +585,7 @@ export const getAverageResolutionTime = asyncHandler(
       createdAt: { $exists: true, $ne: null },
     };
     if (from) match.resolved_at.$gte = from;
-    if (to) {
-      const nextDay = new Date(to);
-      nextDay.setDate(nextDay.getDate() + 1);
-      match.resolved_at.$lt = nextDay;
-    }
+    if (to) match.resolved_at.$lte = to;
 
     const avgResult = await Ticket.aggregate([
       { $match: match },
