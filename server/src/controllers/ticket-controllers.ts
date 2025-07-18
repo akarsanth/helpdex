@@ -222,7 +222,7 @@ export const updateTicketStatus = asyncHandler(
             recipientEmail = updatedTicket.created_by.email;
             recipientUserId = updatedTicket.created_by._id;
             message = `Your ticket "${updatedTicket.title}" has been ${status.toLowerCase()}.`;
-            buttonUrl = `${config.domain}/dashboard/tickets/${ticket._id}`;
+            buttonUrl = `${config.domain}/dashboard/my-tickets/${ticket._id}`;
           }
           break;
 
@@ -306,8 +306,6 @@ export const assignDeveloper = asyncHandler(
 
     await ticket.save();
 
-    console.log(developer);
-    console.log(developer.email);
     // send email
     await sendEmail({
       to: developer.email,
