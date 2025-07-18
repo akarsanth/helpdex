@@ -49,69 +49,6 @@ export const createTicket = asyncHandler(
   }
 );
 
-// @desc    Get all tickets created by the logged-in user
-// @route   GET /api/v1/tickets/my
-// @access  Protected (Client)
-export const myTickets = asyncHandler(async (req: Request, res: Response) => {
-  const user = req.user as IUser;
-
-  const { status, fromDate, toDate, page = "1", limit = "10" } = req.query;
-
-  const pageNum = parseInt(page as string, 10);
-  const limitNum = parseInt(limit as string, 10);
-  const skip = (pageNum - 1) * limitNum;
-
-  const filter: Record<string, any> = {
-    created_by: user._id,
-  };
-
-  // Filter by status (since it's a string now)
-  if (status && typeof status === "string") {
-    filter.status = status;
-  }
-
-  // Optional date filter
-  const createdAtFilter: Record<string, Date> = {};
-  if (fromDate && typeof fromDate === "string") {
-    const from = new Date(fromDate);
-    if (!isNaN(from.getTime())) createdAtFilter.$gte = from;
-  }
-  if (toDate && typeof toDate === "string") {
-    const to = new Date(toDate);
-    if (!isNaN(to.getTime())) createdAtFilter.$lte = to;
-  }
-  if (Object.keys(createdAtFilter).length) {
-    filter.createdAt = createdAtFilter;
-  }
-
-  const [tickets, total] = await Promise.all([
-    Ticket.find(filter)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limitNum)
-      .populate("category_id", "name")
-      .lean()
-      .then((docs) =>
-        docs.map(({ category_id, ...rest }) => ({
-          ...rest,
-          category: category_id,
-        }))
-      ),
-    Ticket.countDocuments(filter),
-  ]);
-
-  res.status(200).json({
-    success: true,
-    data: tickets,
-    pagination: {
-      total,
-      page: pageNum,
-      limit: limitNum,
-      totalPages: Math.ceil(total / limitNum),
-    },
-  });
-});
-
 // @desc    Get a single ticket by ID
 // @route   GET /api/v1/tickets/:ticketId
 // @access  Protected (creator, assigned developer, or any QA)
@@ -471,6 +408,219 @@ export const getTickets = asyncHandler(async (req: Request, res: Response) => {
 
   res.status(200).json({ tickets, total });
 });
+
+// @desc    Get role-based ticket summary (client, qa, developer)
+// @route   GET /api/v1/tickets/summary
+// @access  Private
+export const getTicketSummary = asyncHandler(
+  async (req: Request, res: Response) => {
+    const user = req.user as IUser;
+
+    const now = new Date();
+    const fiveDaysFromNow = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000);
+
+    if (user.role === "client") {
+      // Status count
+      const statusCounts = await Ticket.aggregate([
+        { $match: { created_by: user._id } },
+        { $group: { _id: "$status", count: { $sum: 1 } } },
+      ]);
+      const statusCountObj: Record<string, number> = {};
+      statusCounts.forEach((item) => {
+        statusCountObj[item._id] = item.count;
+      });
+
+      // Upcoming tickets (next 5 days, deadline in future)
+      const upcomingTickets = await Ticket.find({
+        created_by: user._id,
+        deadline: {
+          $exists: true,
+          $ne: null,
+          $gte: now,
+          $lte: fiveDaysFromNow,
+        },
+      })
+        .select("title status deadline")
+        .sort({ deadline: 1 });
+
+      res.status(200).json({
+        statusCounts: statusCountObj,
+        upcomingTickets,
+      });
+      return;
+    }
+
+    if (user.role === "developer") {
+      // Status count for assigned tickets
+      const statusCounts = await Ticket.aggregate([
+        { $match: { assigned_to: user._id } },
+        { $group: { _id: "$status", count: { $sum: 1 } } },
+      ]);
+      const statusCountObj: Record<string, number> = {};
+      statusCounts.forEach((item) => {
+        statusCountObj[item._id] = item.count;
+      });
+
+      // Upcoming tickets (next 5 days, deadline in future)
+      const upcomingTickets = await Ticket.find({
+        assigned_to: user._id,
+        deadline: {
+          $exists: true,
+          $ne: null,
+          $gte: now,
+          $lte: fiveDaysFromNow,
+        },
+      })
+        .select("title status deadline")
+        .sort({ deadline: 1 });
+
+      // Recently assigned (sort by assigned_at descending, limit 3)
+      const recentAssignedTickets = await Ticket.find({
+        assigned_to: user._id,
+      })
+        .select("title status assigned_at")
+        .sort({ assigned_at: -1 })
+        .limit(3);
+
+      // Overdue tickets (deadline < now, not closed/resolved)
+      const overdueTickets = await Ticket.find({
+        assigned_to: user._id,
+        deadline: { $exists: true, $ne: null, $lt: now },
+        status: { $nin: ["Resolved", "Closed"] },
+      })
+        .select("title status deadline")
+        .sort({ deadline: 1 });
+
+      res.status(200).json({
+        statusCounts: statusCountObj,
+        upcomingTickets,
+        recentAssignedTickets,
+        overdueTickets,
+      });
+      return;
+    }
+
+    if (user.role === "qa") {
+      // Status counts for all tickets
+      const statusCounts = await Ticket.aggregate([
+        { $group: { _id: "$status", count: { $sum: 1 } } },
+      ]);
+      const statusCountObj: Record<string, number> = {};
+      statusCounts.forEach((item) => {
+        statusCountObj[item._id] = item.count;
+      });
+
+      // Upcoming tickets (next 5 days, deadline in future)
+      const upcomingTickets = await Ticket.find({
+        deadline: {
+          $exists: true,
+          $ne: null,
+          $gte: now,
+          $lte: fiveDaysFromNow,
+        },
+      })
+        .select("title status deadline")
+        .sort({ deadline: 1 });
+
+      // Overdue tickets: deadline in past, not closed/resolved
+      const overdueTickets = await Ticket.find({
+        deadline: { $exists: true, $ne: null, $lt: now },
+        status: { $nin: ["Closed", "Resolved"] },
+      })
+        .select("title status deadline")
+        .sort({ deadline: 1 });
+
+      res.status(200).json({
+        statusCounts: statusCountObj,
+        upcomingTickets,
+        overdueTickets,
+      });
+      return;
+    }
+
+    res.status(400).json({ message: "Invalid role for summary." });
+  }
+);
+
+// @desc    Get average ticket resolution time (in ms, readable string, and count)
+// @route   GET /api/v1/tickets/average-resolution-time?from=YYYY-MM-DD&to=YYYY-MM-DD
+// @access  Private (QA)
+export const getAverageResolutionTime = asyncHandler(
+  async (req: Request, res: Response) => {
+    const fromStr = req.query.from;
+    const toStr = req.query.to;
+
+    const from = typeof fromStr === "string" ? new Date(fromStr) : undefined;
+    const to = typeof toStr === "string" ? new Date(toStr) : undefined;
+
+    // Validation: If only one is set, both must be set
+    if ((from && !to) || (!from && to)) {
+      res
+        .status(400)
+        .json({ message: "Both from and to must be set or both unset" });
+      return;
+    }
+    if (from && isNaN(from.getTime())) {
+      res.status(400).json({ message: "Invalid 'from' date" });
+      return;
+    }
+    if (to && isNaN(to.getTime())) {
+      res.status(400).json({ message: "Invalid 'to' date" });
+      return;
+    }
+
+    // Only resolved tickets, with valid resolved_at and createdAt
+    const match: any = {
+      status: "Resolved",
+      resolved_at: { $exists: true, $ne: null },
+      createdAt: { $exists: true, $ne: null },
+    };
+    if (from) match.resolved_at.$gte = from;
+    if (to) {
+      const nextDay = new Date(to);
+      nextDay.setDate(nextDay.getDate() + 1);
+      match.resolved_at.$lt = nextDay;
+    }
+
+    const avgResult = await Ticket.aggregate([
+      { $match: match },
+      {
+        $project: {
+          diff: { $subtract: ["$resolved_at", "$createdAt"] },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          avgResolutionTimeMs: { $avg: "$diff" },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const avgMs = avgResult[0]?.avgResolutionTimeMs || 0;
+    const count = avgResult[0]?.count || 0;
+
+    function msToReadable(ms: number) {
+      if (!ms) return "-";
+      const totalMinutes = Math.floor(ms / 60000);
+      const days = Math.floor(totalMinutes / 1440);
+      const hours = Math.floor((totalMinutes % 1440) / 60);
+      const minutes = totalMinutes % 60;
+      let str = "";
+      if (days) str += `${days}d `;
+      if (hours) str += `${hours}h `;
+      if (minutes) str += `${minutes}m`;
+      return str.trim();
+    }
+
+    res.status(200).json({
+      avgResolutionTimeMs: avgMs,
+      avgResolutionTimeStr: msToReadable(avgMs),
+      count,
+    });
+  }
+);
 
 // @desc    Update ticket fields
 // @route   PUT /api/v1/tickets/:id
