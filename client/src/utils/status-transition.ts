@@ -103,3 +103,9 @@ export const statusBorderColorMap: Record<StatusName, string> = {
   Closed: "#388e3c", // green dark
   Reopened: "#d32f2f", // red
 };
+
+export const rolePathMap: Record<string, string | undefined> = {
+  client: "/dashboard/my-tickets",
+  developer: "/dashboard/assigned",
+  qa: "/dashboard/all-tickets",
+};
