@@ -10,13 +10,12 @@ import type { Ticket } from "../types/ticket";
 // Redux
 import { useSelector } from "react-redux";
 import type { RootState } from "../redux/store";
-import { STATUS_ORDER } from "../utils/status-transition";
-
-const rolePathMap: Record<string, string | undefined> = {
-  client: "/dashboard/my-tickets",
-  developer: "/dashboard/assigned",
-  qa: "/dashboard/all-tickets",
-};
+import {
+  STATUS_ORDER,
+  statusColorMap,
+  type StatusName,
+  rolePathMap,
+} from "../utils/status-transition";
 
 const TicketList = () => {
   const navigate = useNavigate();
@@ -97,7 +96,11 @@ const TicketList = () => {
     {
       accessorKey: "status",
       header: "Status",
-      Cell: ({ cell }) => <Chip label={String(cell.getValue())} />,
+      Cell: ({ cell }) => {
+        const status = String(cell.getValue()) as StatusName;
+        const color = statusColorMap[status];
+        return <Chip label={status} color={color} />;
+      },
       filterVariant: "select",
       filterSelectOptions: STATUS_ORDER,
     },
@@ -130,14 +133,15 @@ const TicketList = () => {
       enableColumnFilter: false,
       Cell: ({ cell }) => {
         const val = cell.getValue<string>();
-        return val ? new Date(val).toLocaleDateString() : "-";
+        return val ? new Date(val).toLocaleString() : "-";
       },
     },
     {
       accessorKey: "createdAt",
       header: "Created At",
       enableColumnFilter: false,
-      Cell: ({ cell }) => new Date(cell.getValue<string>()).toLocaleString(),
+      Cell: ({ cell }) =>
+        new Date(cell.getValue<string>()).toLocaleDateString(),
     },
   ];
 
@@ -145,7 +149,7 @@ const TicketList = () => {
     <>
       {error && <Alert severity="error">{error}</Alert>}
 
-      <Typography variant="h6" fontWeight="bold" sx={{ my: 3 }}>
+      <Typography variant="h6" gutterBottom>
         Ticket List
       </Typography>
 
