@@ -18,6 +18,7 @@ import {
 } from "../services/ticket-service";
 import type { StatusName } from "../utils/status-transition";
 
+// Main Component
 const TicketDetail = () => {
   const { ticketId } = useParams<{ ticketId: string }>();
   const navigate = useNavigate();
