@@ -26,6 +26,7 @@ import { type TicketSummaryResponse } from "../../services/ticket-service";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { getFullDayRange } from "../../utils/date";
 
 const QADashboard = () => {
   const navigate = useNavigate();
@@ -42,6 +43,26 @@ const QADashboard = () => {
     count: number;
   } | null>(null);
   const [loadingAvg, setLoadingAvg] = useState(false);
+
+  const [dateError, setDateError] = useState<string | null>(null);
+  const handleFromChange = (date: Date | null) => {
+    setFrom(date);
+    if (date && to && date > to) {
+      setDateError('"From" date cannot be after "To" date');
+      setTo(null);
+    } else {
+      setDateError(null);
+    }
+  };
+
+  const handleToChange = (date: Date | null) => {
+    setTo(date);
+    if (from && date && date < from) {
+      setDateError('"To" date cannot be before "From" date');
+    } else {
+      setDateError(null);
+    }
+  };
 
   // Ticket summary
   useEffect(() => {
@@ -60,17 +81,9 @@ const QADashboard = () => {
   }, []);
 
   // Avg resolution time (only if both from and to or none)
-  const getFullDayRange = (date: Date | null) => {
-    if (!date) return [undefined, undefined];
-    // Start of day in local time, then convert to UTC ISO string
-    const start = new Date(date);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(date);
-    end.setHours(23, 59, 59, 999);
-    return [start.toISOString(), end.toISOString()];
-  };
-
   useEffect(() => {
+    if (dateError) return;
+
     const fetch = async () => {
       setLoadingAvg(true);
       try {
@@ -92,19 +105,19 @@ const QADashboard = () => {
       }
     };
     fetch();
-  }, [from, to]);
+  }, [from, to, dateError]);
 
   if (loading) return <CircularProgress />;
 
   return (
-    <Box sx={{ mt: 4, mb: 8 }}>
+    <Box sx={{ mt: 3, mb: 8 }}>
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
         </Alert>
       )}
 
-      <Typography variant="h5" sx={{ mb: 2 }} gutterBottom>
+      <Typography variant="h5" sx={{ mb: 3 }} gutterBottom>
         Welcome, {currentUser?.name}!
       </Typography>
 
@@ -154,21 +167,32 @@ const QADashboard = () => {
             these dates:
           </Typography>
         </Box>
-        <Box display="flex" gap={2} alignItems="center" mb={2}>
-          <DatePicker
-            label="From"
-            value={from}
-            onChange={setFrom}
-            slotProps={{ textField: { size: "small" } }}
-          />
-          <DatePicker
-            label="To"
-            value={to}
-            onChange={setTo}
-            slotProps={{ textField: { size: "small" } }}
-          />
+        <Box>
+          <Box display="flex" gap={2}>
+            <DatePicker
+              label="From"
+              value={from}
+              onChange={handleFromChange}
+              maxDate={to ?? undefined}
+              slotProps={{ textField: { size: "small" } }}
+            />
+            <DatePicker
+              label="To"
+              value={to}
+              onChange={handleToChange}
+              minDate={from ?? undefined}
+              slotProps={{ textField: { size: "small" } }}
+            />
+          </Box>
+
+          {dateError && (
+            <Typography color="error" variant="caption" sx={{ ml: 1, mt: 1 }}>
+              {dateError}
+            </Typography>
+          )}
+
           <Box>
-            <Typography variant="subtitle1" fontWeight="bold">
+            <Typography variant="subtitle1" fontWeight="bold" mt={1}>
               Avg. Resolution Time:
             </Typography>
             <Typography>

@@ -378,13 +378,22 @@ export const getTickets = asyncHandler(async (req: Request, res: Response) => {
   const filters = JSON.parse((req.query.filters as string) || "[]");
 
   for (const filter of filters) {
-    console.log(filter);
     const { id, value } = filter;
     if (!value) continue;
-
     if (id === "status") query.status = value;
     if (id === "priority") query.priority = value;
     if (id === "category_id") query.category_id = value;
+  }
+
+  // --- Handle date range filter (createdAt) ---
+  const from = req.query.from ? new Date(req.query.from.toString()) : null;
+  const to = req.query.to ? new Date(req.query.to.toString()) : null;
+  if (from && to) {
+    query.createdAt = { $gte: from, $lte: to };
+  } else if (from) {
+    query.createdAt = { $gte: from };
+  } else if (to) {
+    query.createdAt = { $lte: to };
   }
 
   const total = await Ticket.countDocuments(query);

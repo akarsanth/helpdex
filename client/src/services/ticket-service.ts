@@ -130,6 +130,8 @@ interface FetchTicketsOptions {
   pageSize: number;
   search: string;
   filters: MRT_ColumnFiltersState;
+  from?: string | null;
+  to?: string | null;
 }
 
 interface FetchTicketsResponse {
@@ -137,20 +139,33 @@ interface FetchTicketsResponse {
   total: number;
 }
 
+interface FetchTicketsParams {
+  page: number;
+  pageSize: number;
+  search: string;
+  filters: string;
+  from?: string;
+  to?: string;
+}
 export const fetchTickets = async (
   options?: FetchTicketsOptions
 ): Promise<FetchTicketsResponse> => {
   try {
+    // Prepare params object
+    const params: FetchTicketsParams = {
+      page: (options?.pageIndex ?? 0) + 1,
+      pageSize: options?.pageSize ?? 10,
+      search: options?.search ?? "",
+      filters: JSON.stringify(options?.filters),
+    };
+
+    // If present, add from/to as ISO string
+    if (options?.from) params.from = options.from;
+    if (options?.to) params.to = options.to;
+
     const response = await axiosInstance.get<FetchTicketsResponse>(
       "/api/v1/tickets",
-      {
-        params: {
-          page: (options?.pageIndex ?? 0) + 1,
-          pageSize: options?.pageSize ?? 10,
-          search: options?.search ?? "",
-          filters: JSON.stringify(options?.filters),
-        },
-      }
+      { params }
     );
     return response.data;
   } catch (error: unknown) {
