@@ -1,81 +1,97 @@
 # HelpDex – IT Ticket Management System
 
-HelpDex is a full-stack MERN application built to streamline IT issue reporting and resolution between clients, QA teams, developers, and administrators.  
-It modernizes the traditional support workflow with real-time updates, role-based access, ticket lifecycle management, and effective communication tools.
+HelpDex is a MERN-based IT ticket management platform that streamlines communication between clients, QA teams, developers, and administrators.  
+The system includes secure authentication, ticket workflows, comments, attachments, notifications, and clean dashboards built for each role.
 
 ---
 
-## 🚀 Features
+## 🚀 Tech Stack
 
-### 🔐 Authentication & Security
-- JWT-based authentication
-- Role-based access control (Client, QA, Developer, Admin)
-- Protected routes and token refresh handling
-- Email verification + OTP support
+### 🖥️ Frontend (Based on Your `client/package.json`)
+- **React 19**
+- **TypeScript**
+- **Vite**
+- **Material UI (MUI)**
+- **Formik + Yup** (forms & validation)
+- **Axios** (API client)
+- **Redux Toolkit + React Redux** (state management)
+- **React Router DOM** (routing)
+- **Material React Table** (advanced tables)
+- **@tanstack/react-table** (table engine)
+- **date-fns** (date utilities)
 
-### 🎫 Ticket Management
-- Create, update, assign, and track support tickets
-- Ticket attributes: category, priority, attachments, status flow
-- Status workflow: **Open → Assigned → In Progress → Resolved → Closed**
-- Deadline support and activity timestamps
-- File uploads (attachments)
+### 🛠️ Backend (Based on Your `server/package.json`)
+- **Node.js + Express**
+- **MongoDB + Mongoose**
+- **JWT Authentication**
+- **bcryptjs**
+- **cookie-parser**
+- **cors**
+- **cloudinary + multer-storage-cloudinary** (attachments)
+- **formidable** (file parsing)
+- **helmet + morgan** (security + logging)
+- **nodemailer** (email + OTP)
+- **dotenv** (environment variables)
 
-### 💬 Communication & Notifications
-- Threaded comments (internal & public)
-- Real-time email notifications on ticket updates
-- Notification management with read/unread tracking
+### 🔧 Development Tools
+**Frontend**
+- Vite
+- ESLint + TS ESLint
+- TypeScript  
 
-### 📊 Dashboards (Role-Based)
-- **Client**: Submit/view tickets, comment, track progress  
-- **QA**: Review incoming tickets, assign to developers  
-- **Developer**: Resolve assigned tickets, update status  
-- **Admin**: Manage users, roles, and system access  
-
-### 📁 Additional Features
-- Reusable UI components (Formik + Material UI)
-- Ticket filtering & sorting by status, priority, category
-- Responsive design for desktop & mobile
-- Modular backend with Express controllers and middleware
-
----
-
-## 🛠️ Tech Stack
-
-### Frontend
-- React (TypeScript)
-- Material UI
-- Redux Toolkit
-- Axios (with interceptors)
-- Formik + Yup
-
-### Backend
-- Node.js
-- Express.js
-- MongoDB + Mongoose
-- JSON Web Tokens (JWT)
-- Multer (file uploads)
+**Backend**
+- ts-node
+- Nodemon
+- ESLint + Prettier
+- TypeScript
 
 ---
 
-## 📐 System Architecture
+## 🎫 Key Features
 
-### ERD Includes:
-- User  
-- Ticket  
-- Comment  
-- Attachment  
-- Notification  
-- Status  
-- Category  
+### 🔐 Authentication & User Management
+- JWT-based secure login
+- Refresh token handling
+- OTP email verification
+- Role-based access control:
+  - **Client**
+  - **QA**
+  - **Developer**
+  - **Admin**
 
-### DFD & Sequence Diagrams Cover:
-- Registration & login  
-- Ticket submission  
-- Ticket update & deletion  
-- Ticket details flow  
-- Email notification workflow  
+### 🎫 Ticketing System
+- Create & manage tickets with:
+  - Title
+  - Description
+  - Priority
+  - Category
+  - Deadline
+  - Attachments (Cloudinary)
+- Status lifecycle:
+  **Open → Assigned → In Progress → Resolved → Closed**
+- Timestamp tracking for all actions
+
+### 💬 Communication
+- Threaded comments
+- Internal comments (staff only)
+- Email notifications for:
+  - Ticket assignment
+  - Status updates
+  - New comments
+
+### 📊 Dashboards
+- **Client:** Create tickets, comment, track progress  
+- **QA:** Validate issues, assign developers  
+- **Developer:** View assigned tickets, update progress  
+- **Admin:** Manage users, roles, activations  
+
+### 📁 UI and UX
+- Clean Material UI interface
+- Material React Table for ticket listings
+- Advanced filtering, sorting, and pagination
+- Fully responsive layout
 
 ---
 
-## 📁 Folder Structure (High Level)
+## 📁 Project Structure (Simplified)
 
